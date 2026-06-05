@@ -1,0 +1,23 @@
+{
+  "merlo": {
+    "ENERO": { "mdta": 5189, "capita_250101": 1636, "capita_250102": 1648, "neuro": 100, "to": 24, "fono": 101, "hd": 67, "fisiatra": 0, "domicilio": 308, "traslado": 1072 },
+    "FEBRERO": { "mdta": 3426, "capita_250101": 2131, "capita_250102": 2119, "neuro": 189, "to": 12, "fono": 53, "hd": 81, "fisiatra": 0, "domicilio": 426, "traslado": 648 },
+    "MARZO": { "mdta": 3315, "capita_250101": 1679, "capita_250102": 1687, "neuro": 167, "to": 4, "fono": 36, "hd": 73, "fisiatra": 0, "domicilio": 419, "traslado": 419 },
+    "ABRIL": { "mdta": 5431, "capita_250101": 1423, "capita_250102": 1423, "neuro": 231, "to": 17, "fono": 77, "hd": 73, "fisiatra": 0, "domicilio": 417, "traslado": 819 },
+    "MAYO": { "mdta": 4181, "capita_250101": 1120, "capita_250102": 1120, "neuro": 258, "to": 13, "fono": 30, "hd": 71, "fisiatra": 1, "domicilio": 406, "traslado": 812 }
+  },
+  "ituzaingo": {
+    "ENERO": { "mdta": 2024, "capita_250101": 508, "capita_250102": 508, "neuro": 54, "to": 0, "fono": 0, "hd": 0, "fisiatra": 0, "domicilio": 159, "traslado": 311 },
+    "FEBRERO": { "mdta": 1628, "capita_250101": 490, "capita_250102": 472, "neuro": 69, "to": 0, "fono": 0, "hd": 0, "fisiatra": 0, "domicilio": 165, "traslado": 239 },
+    "MARZO": { "mdta": 2016, "capita_250101": 299, "capita_250102": 299, "neuro": 99, "to": 8, "fono": 0, "hd": 0, "fisiatra": 0, "domicilio": 223, "traslado": 330 },
+    "ABRIL": { "mdta": 2302, "capita_250101": 496, "capita_250102": 486, "neuro": 78, "to": 11, "fono": 0, "hd": 7, "fisiatra": 0, "domicilio": 259, "traslado": 257 },
+    "MAYO": { "mdta": 2159, "capita_250101": 453, "capita_250102": 453, "neuro": 42, "to": 1, "fono": 0, "hd": 13, "fisiatra": 0, "domicilio": 250, "traslado": 224 }
+  },
+  "san_miguel": {
+    "ENERO": { "mdta": 2068, "capita_250101": 375, "capita_250102": 375, "neuro": 57, "to": 21, "fono": 0, "hd": 7, "fisiatra": 1, "domicilio": 0, "traslado": 0 },
+    "FEBRERO": { "mdta": 1973, "capita_250101": 359, "capita_250102": 359, "neuro": 29, "to": 8, "fono": 0, "hd": 13, "fisiatra": 0, "domicilio": 0, "traslado": 0 },
+    "MARZO": { "mdta": 2261, "capita_250101": 409, "capita_250102": 409, "neuro": 42, "to": 7, "fono": 0, "hd": 13, "fisiatra": 0, "domicilio": 0, "traslado": 0 },
+    "ABRIL": { "mdta": 2150, "capita_250101": 292, "capita_250102": 292, "neuro": 46, "to": 7, "fono": 0, "hd": 14, "fisiatra": 1, "domicilio": 0, "traslado": 0 },
+    "MAYO": { "mdta": 2166, "capita_250101": 274, "capita_250102": 274, "neuro": 37, "to": 0, "fono": 0, "hd": 12, "fisiatra": 0, "domicilio": 0, "traslado": 0 }
+  }
+}

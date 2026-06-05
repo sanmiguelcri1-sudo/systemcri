@@ -1,0 +1,7 @@
+{
+  "ENERO": { "mdta": 2068, "capita": 377, "neuro": 57, "to": 21, "hd": 7, "fisiatra": 1, "domicilio": 0, "traslado": 0 },
+  "FEBRERO": { "mdta": 1973, "capita": 359, "neuro": 29, "to": 8, "hd": 13, "fisiatra": 0, "domicilio": 0, "traslado": 0 },
+  "MARZO": { "mdta": 2261, "capita": 404, "neuro": 42, "to": 7, "hd": 13, "fisiatra": 0, "domicilio": 0, "traslado": 0 },
+  "ABRIL": { "mdta": 2163, "capita": 304, "neuro": 45, "to": 10, "hd": 14, "fisiatra": 1, "domicilio": 0, "traslado": 0 },
+  "MAYO": { "mdta": 1500, "capita": 223, "neuro": 27, "to": 7, "hd": 0, "fisiatra": 1, "domicilio": 0, "traslado": 0 }
+}
