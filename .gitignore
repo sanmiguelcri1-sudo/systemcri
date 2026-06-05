@@ -1,0 +1,16 @@
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.log
+*.bak
+*.bak_*
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+scratch/
+archivos_neuro/
+Desktop.ini
+Thumbs.db

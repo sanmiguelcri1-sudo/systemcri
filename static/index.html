@@ -1,0 +1,1822 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CRI | Gestión Profesional</title>
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css?v=20260514a" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
+
+  <body>
+    <script>
+      if (window.location.protocol === "file:") {
+        window.location.replace("http://127.0.0.1:8010/");
+      }
+    </script>
+    <div id="access-overlay" class="glass" style="position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; background:rgba(4,10,20,0.82);">
+      <div class="modal-content glass" style="width:min(420px, calc(100vw - 24px)); padding:20px; border:1px solid rgba(255,255,255,0.12);">
+        <h2 style="margin-top:0; margin-bottom:6px;">Acceso restringido</h2>
+        <p style="margin:0 0 10px 0; color:#d8e6ff; font-size:0.95rem;">Usuario recomendado: CENTROSCRI<br>Contraseña: CENTROSCRI</p>
+        <form id="access-login-form" autocomplete="off">
+          <div class="form-group" style="margin-bottom:10px;">
+            <label for="access-user">Usuario</label>
+            <input id="access-user" type="text" />
+          </div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label for="access-pass">Contraseña</label>
+            <input id="access-pass" type="password" />
+          </div>
+          <p id="access-error" style="color:#ffb4b4; min-height:1.1em; margin:0 0 10px 0;"></p>
+          <button class="btn-primary" type="submit" style="width:100%;">Entrar</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="app-container" id="app-shell" style="display:none;">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="logo">
+          <i class="fas fa-file-medical"></i>
+          <span>CRI</span>
+        </div>
+        <nav>
+          <button class="nav-btn active" data-tab="panel-tab">
+            <i class="fas fa-chart-line"></i> Panel
+          </button>
+          <button class="nav-btn" data-tab="hd-tab">
+            <i class="fas fa-hospital-user"></i> Hospital de Día
+          </button>
+          <button class="nav-btn" data-tab="search-tab">
+            <i class="fas fa-search"></i> Historias Clínicas
+          </button>
+          <button class="nav-btn" data-tab="register-tab">
+            <i class="fas fa-user-plus"></i>
+            <span class="nav-text">Registrar</span>
+          </button>
+          <button class="nav-btn" data-tab="agenda-tab">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Agenda General</span>
+          </button>
+          <button class="nav-btn" data-tab="neuro-tab">
+            <i class="fas fa-brain"></i>
+            <span>Neurocognitivo</span>
+          </button>
+          <button class="nav-btn" data-tab="top25-tab">
+            <i class="fas fa-ranking-star"></i>
+            <span>Top 25</span>
+          </button>
+          <button class="nav-btn" data-tab="intersoftic-tab">
+            <i class="fas fa-table-cells-large"></i>
+            <span>Intersoftic</span>
+          </button>
+          <button class="nav-btn" data-tab="audit-tab">
+            <i class="fas fa-triangle-exclamation"></i>
+            <span>Auditoría</span>
+          </button>
+          <button class="nav-btn" data-tab="professionals-tab">
+            <i class="fas fa-user-doctor"></i>
+            <span>Profesionales</span>
+          </button>
+          <button
+            id="sync-btn"
+            class="nav-btn"
+            style="
+              border-top: 1px solid rgba(255, 255, 255, 0.1);
+              margin-top: 10px;
+              color: #ffcc00;
+            "
+          >
+            <i class="fas fa-sync"></i>
+            <span>Sincronizar</span>
+          </button>
+        </nav>
+        <div class="sidebar-footer">
+          <button id="logout-btn" class="nav-btn" style="width:100%; margin-bottom:8px; display:none; color:#ffd9d9; border-top:1px solid rgba(255,255,255,0.08);">
+            <i class="fas fa-right-from-bracket"></i>
+            <span>Cerrar sesión</span>
+          </button>
+          <div class="network-status">
+            <i class="fas fa-network-wired"></i> Red Activa
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="content">
+        <!-- Search Tab -->
+        <section id="professionals-tab" class="tab-content">
+          <header class="tab-header">
+            <div>
+              <h1>Profesionales</h1>
+              <p
+                style="
+                  color: var(--text-muted);
+                  font-size: 0.95rem;
+                  font-weight: 600;
+                  margin-top: -10px;
+                "
+              >
+                Datos importados desde Intersoftic, editables desde Personal.
+              </p>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px">
+              <button class="btn-primary" id="professional-new-btn">
+                <i class="fas fa-plus"></i> Nuevo profesional
+              </button>
+              <button class="btn-primary" id="professionals-refresh-btn">
+                <i class="fas fa-rotate-right"></i> Actualizar
+              </button>
+            </div>
+          </header>
+
+          <div class="panel-grid" id="professionals-summary"></div>
+
+          <div id="professional-modal" class="modal">
+            <div class="modal-content glass modal-lg">
+            <span class="close-professional-modal close-modal">&times;</span>
+            <h2 id="professional-modal-title">Nuevo profesional</h2>
+            <input type="hidden" id="professional-id" />
+            <div class="form-grid" style="margin-top: 10px">
+              <div class="form-group" style="grid-column: 1 / -1">
+                <label for="professional-name">Nombre</label>
+                <input type="text" id="professional-name" placeholder="APELLIDO, NOMBRE" />
+              </div>
+              <div class="form-group">
+                <label for="professional-role">Profesión</label>
+                <select id="professional-role">
+                  <option value="">Sin definir</option>
+                  <option value="KINE">KINE</option>
+                  <option value="FONO">FONO</option>
+                  <option value="TO">TO</option>
+                  <option value="PSICOLOGO">PSICOLOGO</option>
+                  <option value="MEDICO">MEDICO</option>
+                  <option value="ENFERMERA">ENFERMERA</option>
+                  <option value="ADMINISTRATIVO">ADMINISTRATIVO</option>
+                  <option value="LIMPIEZA">LIMPIEZA</option>
+                  <option value="MANTENIMIENTO">MANTENIMIENTO</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="professional-branch">Sucursal</label>
+                <input type="text" id="professional-branch" placeholder="SAN MIGUEL" />
+              </div>
+              <div class="form-group">
+                <label for="professional-dni">DNI</label>
+                <input type="text" id="professional-dni" />
+              </div>
+              <div class="form-group">
+                <label for="professional-matricula">M.N.</label>
+                <input type="text" id="professional-matricula" />
+              </div>
+              <div class="form-group">
+                <label for="professional-matricula-2">M.P.</label>
+                <input type="text" id="professional-matricula-2" />
+              </div>
+              <div class="form-group">
+                <label for="professional-phone">Teléfono</label>
+                <input type="text" id="professional-phone" />
+              </div>
+              <div class="form-group">
+                <label for="professional-mail">Mail</label>
+                <input type="email" id="professional-mail" />
+              </div>
+              <div class="form-group">
+                <label for="professional-birth">F. nac.</label>
+                <input type="date" id="professional-birth" />
+              </div>
+              <div class="form-group">
+                <label for="professional-emergency">Nro. emergencia</label>
+                <input type="text" id="professional-emergency" />
+              </div>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px">
+              <button class="btn-primary" id="professional-save-btn">
+                <i class="fas fa-floppy-disk"></i> Guardar
+              </button>
+              <button class="btn-primary" id="professional-clear-btn">
+                <i class="fas fa-eraser"></i> Limpiar
+              </button>
+              <button class="btn-primary" id="professional-delete-btn">
+                <i class="fas fa-trash"></i> Eliminar
+              </button>
+            </div>
+            </div>
+          </div>
+
+          <div class="glass panel-card">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 12px;
+                flex-wrap: wrap;
+                margin-bottom: 12px;
+              "
+            >
+              <h3>Listado Intersoftic</h3>
+              <span id="professionals-count" class="badge badge-hc">0</span>
+            </div>
+            <div
+              class="intersoftic-branch-tabs"
+              id="professionals-branch-tabs"
+              aria-label="Filtro de sucursal de profesionales"
+            >
+              <button class="intersoftic-branch-btn active" data-branch="">
+                Todas
+              </button>
+              <button class="intersoftic-branch-btn" data-branch="SAN MIGUEL">
+                San Miguel
+              </button>
+              <button class="intersoftic-branch-btn" data-branch="ITUZAINGO">
+                Ituzaingó
+              </button>
+              <button class="intersoftic-branch-btn" data-branch="MERLO">
+                Merlo
+              </button>
+            </div>
+            <div class="form-grid" style="margin-bottom: 12px">
+              <div class="form-group">
+                <label for="professionals-role-filter">Profesión</label>
+                <select id="professionals-role-filter">
+                  <option value="">Todas</option>
+                  <option value="KINE">KINE</option>
+                  <option value="FONO">FONO</option>
+                  <option value="TO">TO</option>
+                  <option value="PSICOLOGO">PSICOLOGO</option>
+                  <option value="MEDICO">MEDICO</option>
+                  <option value="ENFERMERA">ENFERMERA</option>
+                  <option value="ADMINISTRATIVO">ADMINISTRATIVO</option>
+                  <option value="LIMPIEZA">LIMPIEZA</option>
+                  <option value="MANTENIMIENTO">MANTENIMIENTO</option>
+                  <option value="SIN DEFINIR">SIN DEFINIR</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Profesional</th>
+                    <th>Prof.</th>
+                    <th>DNI</th>
+                    <th>M.N.</th>
+                    <th>M.P.</th>
+                    <th>F. nac. / Edad</th>
+                    <th>Contacto</th>
+                    <th>Emergencia</th>
+                    <th>Sucursal</th>
+                    <th>Efec. 2026</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="professionals-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Search Tab -->
+        <section id="search-tab" class="tab-content">
+          <header
+            class="tab-header"
+            style="flex-direction: column; align-items: stretch; gap: 15px"
+          >
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                width: 100%;
+                flex-wrap: wrap;
+                gap: 10px;
+              "
+            >
+              <h1>Historias Clínicas</h1>
+              <div
+                style="
+                  display: flex;
+                  gap: 10px;
+                  align-items: center;
+                  flex-wrap: wrap;
+                "
+              >
+                <div class="search-bar" style="margin-bottom: 0">
+                  <i class="fas fa-search"></i>
+                  <input
+                    type="text"
+                    id="main-search"
+                    placeholder="Buscar por apellido o DNI..."
+                  />
+                </div>
+                <div class="search-bar" style="margin-bottom: 0; width: 210px">
+                  <i class="fas fa-hashtag"></i>
+                  <input
+                    type="text"
+                    id="hc-search"
+                    placeholder="Buscar por HC..."
+                  />
+                </div>
+              </div>
+            </div>
+            <div
+              id="stats-container"
+              style="
+                display: flex;
+                gap: 10px;
+                overflow-x: auto;
+                padding-bottom: 5px;
+              "
+            >
+              <!-- JS populated -->
+            </div>
+          </header>
+
+          <div class="table-container">
+            <table id="patients-table">
+              <thead>
+                <tr>
+                  <th>Nombre y Apellido</th>
+                  <th>DNI</th>
+                  <th>Beneficio</th>
+                  <th>HC</th>
+                  <th>Localidad</th>
+                  <th>Año Carpeta</th>
+                  <th>Sesiones</th>
+                  <th>Editar</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="patients-body">
+                <!-- JS will populate this -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="panel-tab" class="tab-content active">
+          <header
+            class="tab-header"
+            style="
+              justify-content: space-between;
+              display: flex;
+              align-items: center;
+              flex-wrap: wrap;
+              gap: 20px;
+            "
+          >
+            <div>
+              <h1>Panel CRI</h1>
+              <p
+                id="panel-meta"
+                style="
+                  color: var(--text-muted);
+                  font-size: 0.95rem;
+                  font-weight: 600;
+                  margin-top: -10px;
+                "
+              ></p>
+            </div>
+            <button id="refresh-panel-btn" class="btn-primary">
+              <i class="fas fa-rotate-right"></i> Actualizar Panel
+            </button>
+          </header>
+
+          <div id="panel-summary" class="panel-grid"></div>
+
+          <div class="panel-two-col">
+            <div class="glass panel-card">
+              <h3>Turnos Dados por Día</h3>
+              <div id="panel-monthly-body" class="panel-day-columns"></div>
+            </div>
+
+            <div id="panel-weekly-body" style="display:none"></div>
+          </div>
+
+          <div class="panel-two-col" style="display: none">
+            <div class="glass panel-card">
+              <h3>Métodos Detectados</h3>
+              <table class="panel-table">
+                <thead>
+                  <tr>
+                    <th>Método</th>
+                    <th>Pacientes</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="panel-methods-body"></tbody>
+              </table>
+            </div>
+
+            <div class="glass panel-card">
+              <h3>Notas de Cruce</h3>
+              <div id="panel-notes" class="panel-notes"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Hospital de Día -->
+        <section id="hd-tab" class="tab-content">
+          <div class="card glass">
+            <!-- Header -->
+            <div
+              class="card-header"
+              style="flex-direction: column; align-items: flex-start; gap: 12px"
+            >
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  width: 100%;
+                  align-items: center;
+                "
+              >
+                <h2 style="margin: 0">
+                  <i
+                    class="fas fa-hospital-symbol"
+                    style="color: var(--primary)"
+                  ></i>
+                  Hospital de Día
+                </h2>
+                <div class="search-bar" style="width: 280px; margin: 0">
+                  <i class="fas fa-search"></i>
+                  <input
+                    type="text"
+                    id="hd-search"
+                    placeholder="Buscar paciente..."
+                  />
+                </div>
+              </div>
+
+              <!-- Stats Row -->
+              <div style="display: flex; gap: 12px; width: 100%">
+                <div class="hd-stat-card" style="border-color: var(--primary)">
+                  <span class="hd-stat-label">ACTIVOS</span>
+                  <span id="hd-stat-active" class="hd-stat-num">-</span>
+                </div>
+                <div class="hd-stat-card" style="border-color: #f59e0b">
+                  <span class="hd-stat-label">TOTAL EN SISTEMA</span>
+                  <span id="hd-stat-month" class="hd-stat-num">-</span>
+                </div>
+                <div class="hd-stat-card" style="border-color: #ef4444">
+                  <span class="hd-stat-label">SUSPENDIDOS</span>
+                  <span id="hd-stat-susp" class="hd-stat-num">-</span>
+                </div>
+                <div
+                  class="hd-stat-card"
+                  style="border-color: #f97316; flex: 2"
+                >
+                  <span class="hd-stat-label"
+                    >⚠️ PRÓXIMOS A VENCER (30 días)</span
+                  >
+                  <span
+                    id="hd-stat-expiring"
+                    class="hd-stat-num"
+                    style="color: #f97316"
+                    >-</span
+                  >
+                </div>
+              </div>
+
+              <!-- Quick Add Bar -->
+              <div
+                style="
+                  display: flex;
+                  gap: 10px;
+                  width: 100%;
+                  align-items: flex-end;
+                  background: rgba(13, 110, 253, 0.06);
+                  border: 1px dashed rgba(13, 110, 253, 0.3);
+                  border-radius: 12px;
+                  padding: 12px;
+                "
+              >
+                <div
+                  style="
+                    display: flex;
+                    flex-direction: column;
+                    flex: 2;
+                    position: relative;
+                  "
+                >
+                  <label class="hd-quick-label">PACIENTE</label>
+                  <input
+                    type="text"
+                    id="hq-search"
+                    placeholder="Escribí nombre o DNI..."
+                    autocomplete="off"
+                  />
+                  <input type="hidden" id="hq-patient-id" />
+                  <div
+                    id="hq-results"
+                    class="suggestions-list"
+                    style="
+                      display: none;
+                      position: absolute;
+                      top: 100%;
+                      left: 0;
+                      right: 0;
+                      z-index: 999;
+                    "
+                  ></div>
+                </div>
+                <div style="display: flex; flex-direction: column; width: 90px">
+                  <label class="hd-quick-label">LOCALIDAD</label>
+                  <input type="text" id="hq-loc" placeholder="SM" value="SM" />
+                </div>
+                <div style="display: flex; flex-direction: column; flex: 1">
+                  <label class="hd-quick-label">DIAGNÓSTICO</label>
+                  <input type="text" id="hq-diag" placeholder="ACV" />
+                </div>
+                <div style="display: flex; flex-direction: column; flex: 1.5">
+                  <label class="hd-quick-label">ORDEN ELECTRÓNICA</label>
+                  <input
+                    type="text"
+                    id="hq-orden"
+                    placeholder="N° de orden..."
+                  />
+                </div>
+                <button
+                  class="btn-primary"
+                  onclick="openHDIntakeModalFromQuick()"
+                  style="white-space: nowrap; padding: 10px 20px"
+                >
+                  <i class="fas fa-clipboard-list"></i> ABRIR FORMULARIO HD
+                </button>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div style="overflow-x: auto; margin-top: 8px">
+              <table class="hd-table" id="hd-main-table">
+                <thead>
+                  <tr>
+                    <th style="width: 40px">#</th>
+                    <th>LOCALIDAD</th>
+                    <th style="min-width: 160px">PACIENTE</th>
+                    <th style="min-width: 90px">DNI</th>
+                    <th style="min-width: 100px">HC</th>
+                    <th style="min-width: 140px">BENEFICIO</th>
+                    <th>DIAGNÓSTICO</th>
+                    <th style="min-width: 130px">ORDEN ELECT.</th>
+                    <th>OP 1</th>
+                    <th>FECHA VAL OP 1</th>
+                    <th>OP 2</th>
+                    <th>FECHA VAL OP 2</th>
+                    <th>OP 3</th>
+                    <th>FECHA VAL OP 3</th>
+                    <th>OP 4</th>
+                    <th>FECHA VAL OP 4</th>
+                    <th>OP 5</th>
+                    <th>FECHA VAL OP 5</th>
+                    <th style="min-width: 110px">PRÓX. PEDIDO</th>
+                    <th>ESTADO</th>
+                    <th>✕</th>
+                  </tr>
+                </thead>
+                <tbody id="hd-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Register Tab -->
+        <section id="register-tab" class="tab-content">
+          <header class="tab-header">
+            <h1>Nuevo Registro</h1>
+          </header>
+
+          <form id="register-form" class="glass-form">
+            <input type="hidden" id="reg-id" value="" />
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="reg-dni">DNI</label>
+                <div style="display: flex; gap: 8px;">
+                  <input
+                    type="text"
+                    id="reg-dni"
+                    required
+                    placeholder="Ingrese DNI para verificar"
+                    style="flex: 1;"
+                  />
+                  <button type="button" id="reg-pami-btn" class="btn-primary" style="padding: 10px 15px; display: flex; align-items: center; gap: 6px; white-space: nowrap; background: linear-gradient(135deg, #0d6efd, #0284c7);" title="Buscar datos en PAMI">
+                    <i class="fas fa-search-plus"></i> PAMI
+                  </button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="reg-nombre">Nombre y Apellido</label>
+                <input type="text" id="reg-nombre" required />
+              </div>
+              <div class="form-group">
+                <label for="reg-nacimiento">Fecha Nacimiento</label>
+                <input type="date" id="reg-nacimiento" />
+              </div>
+              <div class="form-group">
+                <label for="reg-domicilio">Domicilio</label>
+                <input type="text" id="reg-domicilio" />
+              </div>
+              <div class="form-group">
+                <label for="reg-localidad">Localidad</label>
+                <input type="text" id="reg-localidad" />
+              </div>
+              <div class="form-group">
+                <label for="reg-telefono">Teléfono</label>
+                <input type="text" id="reg-telefono" />
+              </div>
+              <div class="form-group">
+                <label for="reg-beneficio">Nº Beneficio</label>
+                <input type="text" id="reg-beneficio" />
+              </div>
+              <div class="form-group highlight">
+                <label for="reg-hc">Nº Historia Clínica (Auto)</label>
+                <input type="text" id="reg-hc" required readonly />
+              </div>
+              <div class="form-group">
+                <label for="reg-anio">Año Vigencia</label>
+                <input type="number" id="reg-anio" required />
+              </div>
+              <div class="form-group">
+                <label for="reg-mes">Mes Renovación</label>
+                <input type="number" id="reg-mes" min="1" max="12" required />
+              </div>
+              <div class="form-group highlight-alt">
+                <label for="reg-f-inicio">Fecha Inicio Periodo</label>
+                <input type="date" id="reg-f-inicio" />
+              </div>
+              <div class="form-group highlight-alt">
+                <label for="reg-f-fin">Fecha Fin Periodo</label>
+                <input type="date" id="reg-f-fin" />
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn-primary">
+                <i class="fas fa-save"></i> Guardar Registro
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Neurocognitivo Tab -->
+        <section id="neuro-tab" class="tab-content">
+          <header
+            class="tab-header"
+            style="
+              justify-content: space-between;
+              display: flex;
+              align-items: center;
+              flex-wrap: wrap;
+              gap: 20px;
+            "
+          >
+            <h1>Agenda Neurocognitivo</h1>
+            <div
+              class="header-tools"
+              style="display: flex; gap: 20px; align-items: center"
+            >
+              <button
+                id="fetch-emails-btn"
+                class="btn-primary"
+                style="margin-right: 10px"
+              >
+                <i class="fas fa-folder-open"></i> Sincronizar Informes
+              </button>
+              <button
+                id="neuro-dedupe-btn"
+                class="btn-icon"
+                title="Limpiar duplicados PDF"
+              >
+                <i class="fas fa-broom"></i>
+              </button>
+              <input
+                type="file"
+                id="neuro-report-files"
+                accept=".doc,.docx,.pdf"
+                multiple
+                style="display: none"
+              />
+              <input
+                type="file"
+                id="neuro-single-report-file"
+                accept=".doc,.docx,.pdf"
+                style="display: none"
+              />
+              <div
+                class="search-bar"
+                style="max-width: 300px; margin-bottom: 0"
+              >
+                <i class="fas fa-search"></i>
+                <input
+                  type="text"
+                  id="neuro-search"
+                  placeholder="Buscar en Neuro..."
+                />
+              </div>
+              <div
+                class="date-selector"
+                style="display: flex; align-items: center; gap: 10px"
+              >
+                <label for="neuro-month-filter" style="font-weight: 600"
+                  >Ver Mes:</label
+                >
+                <input
+                  type="month"
+                  id="neuro-month-filter"
+                  class="glass-input"
+                  style="
+                    padding: 8px;
+                    border-radius: 8px;
+                    border: 1px solid rgba(0, 0, 0, 0.1);
+                  "
+                />
+              </div>
+            </div>
+          </header>
+
+          <div id="neuro-monthly-container">
+            <!-- Grupos por día se generarán aquí -->
+          </div>
+          <button class="btn-primary floating-btn" id="add-neuro-btn">
+            <i class="fas fa-plus"></i>
+          </button>
+        </section>
+
+        <!-- Agenda General Tab -->
+        <section id="agenda-tab" class="tab-content">
+          <header
+            class="tab-header"
+            style="
+              justify-content: space-between;
+              display: flex;
+              align-items: center;
+              flex-wrap: wrap;
+              gap: 20px;
+            "
+          >
+            <div>
+              <h1>Agenda Diaria</h1>
+              <p
+                id="agenda-day-display"
+                style="
+                  color: var(--text-muted);
+                  font-size: 0.9rem;
+                  font-weight: 600;
+                "
+              ></p>
+              <p
+                id="agenda-turn-count"
+                style="
+                  color: var(--primary);
+                  font-size: 0.95rem;
+                  font-weight: 700;
+                  margin-top: 6px;
+                "
+              ></p>
+            </div>
+            <div
+              class="header-tools"
+              style="display: flex; gap: 15px; align-items: center"
+            >
+              <input
+                type="date"
+                id="agenda-date-filter"
+                class="glass-input"
+                style="padding: 10px; border-radius: 8px"
+              />
+              <button
+                id="refresh-agenda-btn"
+                class="btn-icon"
+                title="Sincronizar"
+              >
+                <i class="fas fa-sync"></i>
+              </button>
+              <button
+                id="print-agenda-btn"
+                class="btn-primary"
+                style="padding: 10px 15px"
+                title="Imprimir Planilla"
+              >
+                <i class="fas fa-print"></i> IMPRIMIR HOJA
+              </button>
+            </div>
+          </header>
+
+          <div
+            class="agenda-scroll-container"
+            style="
+              overflow-x: auto;
+              overflow-y: auto;
+              max-height: calc(100vh - 250px);
+              background: rgba(255, 255, 255, 0.5);
+              border-radius: 12px;
+              border: 1px solid var(--glass-border);
+            "
+          >
+            <table id="weekly-grid" class="weekly-grid-table">
+              <thead id="grid-header">
+                <!-- JS will populate Date and Box headers -->
+              </thead>
+              <tbody id="grid-body">
+                <!-- JS will populate time rows and cells -->
+              </tbody>
+            </table>
+          </div>
+
+          <button
+            class="btn-primary floating-btn"
+            id="add-appointment-btn"
+            style="right: 30px; bottom: 30px"
+          >
+            <i class="fas fa-calendar-plus"></i> <span>Nuevo Turno</span>
+          </button>
+        </section>
+
+        <section id="staff-tab" class="tab-content" style="display: none">
+          <header class="tab-header">
+            <div>
+              <h1>Ingreso/Egreso del Personal</h1>
+              <p
+                style="
+                  color: var(--text-muted);
+                  font-size: 0.95rem;
+                  font-weight: 600;
+                  margin-top: -10px;
+                "
+              >
+                Turno de corrido: calendario mensual + carga rápida + Word.
+              </p>
+            </div>
+          </header>
+
+          <div class="panel-two-col">
+            <div class="glass panel-card">
+              <h3>Control</h3>
+              <div class="form-grid" style="margin-top: 10px">
+                <div class="form-group">
+                  <label for="staff-month">Mes</label>
+                  <input type="number" id="staff-month" min="1" max="12" />
+                </div>
+                <div class="form-group">
+                  <label for="staff-year">Año</label>
+                  <input type="number" id="staff-year" />
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1">
+                  <label for="staff-select">Personal</label>
+                  <select id="staff-select"></select>
+                </div>
+                <div class="form-group">
+                  <label for="staff-cargo">Cargo</label>
+                  <input type="text" id="staff-cargo" placeholder="KINESIO" />
+                </div>
+                <div class="form-group">
+                  <label for="staff-include-word">Incluir en Word</label>
+                  <select id="staff-include-word">
+                    <option value="1">SI</option>
+                    <option value="0">NO</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="staff-default-ingreso">Horario habitual ingreso</label>
+                  <input type="time" id="staff-default-ingreso" />
+                </div>
+                <div class="form-group">
+                  <label for="staff-default-egreso">Horario habitual egreso</label>
+                  <input type="time" id="staff-default-egreso" />
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1">
+                  <label for="staff-excel-path">Importar Excel (ruta)</label>
+                  <input
+                    type="text"
+                    id="staff-excel-path"
+                    placeholder="D:\HORAS\2026\ABRIL 2026\ABRIL 2026.xlsx"
+                  />
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1">
+                  <label for="staff-base-folder">Carpeta base (HORAS)</label>
+                  <input
+                    type="text"
+                    id="staff-base-folder"
+                    placeholder="D:\HORAS"
+                  />
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1">
+                  <label for="staff-output-path">Salida Word (opcional)</label>
+                  <input
+                    type="text"
+                    id="staff-output-path"
+                    placeholder="(se guarda en la carpeta del mes)"
+                  />
+                </div>
+              </div>
+
+              <div
+                style="
+                  display: flex;
+                  flex-wrap: wrap;
+                  gap: 10px;
+                  margin-top: 15px;
+                "
+              >
+                <button class="btn-primary" id="staff-refresh-btn">
+                  <i class="fas fa-rotate-right"></i> Actualizar
+                </button>
+                <button class="btn-primary" id="staff-save-default-btn">
+                  <i class="fas fa-floppy-disk"></i> Guardar horario
+                </button>
+                <button class="btn-primary" id="staff-apply-weekdays-btn">
+                  <i class="fas fa-calendar-check"></i> Aplicar L-V
+                </button>
+                <button class="btn-primary" id="staff-clear-month-btn">
+                  <i class="fas fa-eraser"></i> Borrar mes
+                </button>
+                <button class="btn-primary" id="staff-import-btn">
+                  <i class="fas fa-file-excel"></i> Importar Excel
+                </button>
+                <button class="btn-primary" id="staff-export-word-btn">
+                  <i class="fas fa-file-word"></i> Generar Word
+                </button>
+              </div>
+
+              <div
+                id="staff-status"
+                style="
+                  margin-top: 12px;
+                  font-weight: 800;
+                  color: var(--text-muted);
+                "
+              ></div>
+            </div>
+
+            <div class="glass panel-card">
+              <h3>Totales del mes</h3>
+              <table class="panel-table">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Cargo</th>
+                    <th>Horas</th>
+                    <th>Word</th>
+                  </tr>
+                </thead>
+                <tbody id="staff-totals-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel-two-col">
+            <div class="glass panel-card">
+              <h3>Calendario mensual</h3>
+              <div class="staff-cal-weekdays">
+                <div>L</div>
+                <div>M</div>
+                <div>X</div>
+                <div>J</div>
+                <div>V</div>
+                <div>S</div>
+                <div>D</div>
+              </div>
+              <div id="staff-calendar" class="staff-cal-grid"></div>
+            </div>
+
+            <div class="glass panel-card">
+              <h3>Cargar / editar día</h3>
+              <div class="form-grid" style="margin-top: 10px">
+                <div class="form-group">
+                  <label for="staff-day-date">Fecha</label>
+                  <input type="date" id="staff-day-date" />
+                </div>
+                <div class="form-group">
+                  <label for="staff-day-ingreso">Ingreso</label>
+                  <input type="time" id="staff-day-ingreso" />
+                </div>
+                <div class="form-group">
+                  <label for="staff-day-egreso">Egreso</label>
+                  <input type="time" id="staff-day-egreso" />
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1">
+                  <label for="staff-day-obs">Observaciones</label>
+                  <input type="text" id="staff-day-obs" placeholder="Opcional" />
+                </div>
+              </div>
+
+              <div
+                style="
+                  display: flex;
+                  flex-wrap: wrap;
+                  gap: 10px;
+                  margin-top: 15px;
+                "
+              >
+                <button class="btn-primary" id="staff-day-save-btn">
+                  <i class="fas fa-check"></i> Guardar día
+                </button>
+                <button class="btn-primary" id="staff-day-delete-btn">
+                  <i class="fas fa-trash"></i> Eliminar día
+                </button>
+              </div>
+
+              <div
+                id="staff-day-preview"
+                style="
+                  margin-top: 12px;
+                  font-weight: 800;
+                  color: var(--text-muted);
+                "
+              ></div>
+            </div>
+          </div>
+
+          <div class="glass panel-card">
+            <h3>Registros del mes (personal seleccionado)</h3>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Ingreso</th>
+                    <th>Egreso</th>
+                    <th>Horas</th>
+                    <th>Obs</th>
+                  </tr>
+                </thead>
+                <tbody id="staff-att-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="glass panel-card">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 12px;
+                flex-wrap: wrap;
+              "
+            >
+              <h3>Profesionales Intersoftic</h3>
+              <span id="staff-intersoftic-count" class="badge badge-hc">0</span>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Profesional</th>
+                    <th>DNI</th>
+                    <th>M.N.</th>
+                    <th>M.P.</th>
+                    <th>Contacto</th>
+                    <th>Sucursal</th>
+                    <th>Efec. 2026</th>
+                  </tr>
+                </thead>
+                <tbody id="staff-intersoftic-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="top25-tab" class="tab-content">
+          <header
+            class="tab-header"
+            style="
+              justify-content: space-between;
+              display: flex;
+              align-items: center;
+              flex-wrap: wrap;
+              gap: 20px;
+            "
+          >
+            <div>
+              <h1>Top 25 Histórico</h1>
+              <p
+                id="top25-meta"
+                style="
+                  color: var(--text-muted);
+                  font-size: 0.95rem;
+                  font-weight: 600;
+                  margin-top: -10px;
+                "
+              ></p>
+            </div>
+            <button id="refresh-top25-btn" class="btn-primary">
+              <i class="fas fa-rotate-right"></i> Actualizar Ranking
+            </button>
+          </header>
+
+          <div class="top25-grid">
+            <div class="top25-highlight glass">
+              <div class="top25-highlight-label">Líder Histórico</div>
+              <div id="top25-leader-name" class="top25-highlight-name">-</div>
+              <div id="top25-leader-detail" class="top25-highlight-detail">
+                -
+              </div>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table id="top25-table">
+              <thead>
+                <tr>
+                  <th>Puesto</th>
+                  <th>Paciente</th>
+                  <th>DNI</th>
+                  <th>Sesiones</th>
+                  <th>Primera Sesión</th>
+                  <th>Última Sesión</th>
+                </tr>
+              </thead>
+              <tbody id="top25-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="intersoftic-tab" class="tab-content">
+          <header
+            class="tab-header"
+            style="
+              justify-content: space-between;
+              display: flex;
+              align-items: center;
+              flex-wrap: wrap;
+              gap: 20px;
+            "
+          >
+            <div>
+              <h1>Estadística Intersoftic</h1>
+              <p
+                id="intersoftic-meta"
+                style="
+                  color: var(--text-muted);
+                  font-size: 0.95rem;
+                  font-weight: 600;
+                  margin-top: -10px;
+                "
+              ></p>
+            </div>
+            <button id="refresh-intersoftic-btn" class="btn-primary">
+              <i class="fas fa-rotate-right"></i> Actualizar Estadística
+            </button>
+          </header>
+
+          <div id="intersoftic-branch-tabs" class="intersoftic-branch-tabs" aria-label="Filtro de sucursal">
+            <button class="intersoftic-branch-btn active" data-branch="all">Todas</button>
+            <button class="intersoftic-branch-btn" data-branch="san_miguel">San Miguel</button>
+            <button class="intersoftic-branch-btn" data-branch="ituzaingo">Ituzaingó</button>
+            <button class="intersoftic-branch-btn" data-branch="merlo">Merlo</button>
+          </div>
+
+          <div id="intersoftic-summary" class="panel-grid"></div>
+
+          <div class="table-container" id="intersoftic-container">
+            <table id="intersoftic-table">
+              <thead>
+                <tr>
+                  <th>MES</th>
+                  <th>MDTA</th>
+                  <th>CAPITA 250101</th>
+                  <th>CAPITA 250102</th>
+                  <th>NEURO</th>
+                  <th>TO</th>
+                  <th>FONO</th>
+                  <th>HD</th>
+                  <th>FISIATRA</th>
+                  <th>DOMICILIO</th>
+                  <th>TRASLADO</th>
+                  <th>TOTAL</th>
+                </tr>
+              </thead>
+              <tbody id="intersoftic-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Auditoría Intersoftic Tab -->
+        <section id="audit-tab" class="tab-content">
+          <header
+            class="tab-header"
+            style="
+              justify-content: space-between;
+              display: flex;
+              align-items: center;
+              flex-wrap: wrap;
+              gap: 20px;
+            "
+          >
+            <div>
+              <h1><i class="fas fa-triangle-exclamation" style="color: #ef4444; margin-right: 8px;"></i>Auditoría Intersoftic</h1>
+              <p
+                id="audit-meta"
+                style="
+                  color: var(--text-muted);
+                  font-size: 0.95rem;
+                  font-weight: 600;
+                  margin-top: -10px;
+                "
+              ></p>
+            </div>
+            <button id="refresh-audit-btn" class="btn-primary">
+              <i class="fas fa-rotate-right"></i> Ejecutar Auditoría
+            </button>
+          </header>
+
+          <div id="audit-branch-tabs" class="intersoftic-branch-tabs" aria-label="Filtro de sucursal auditoría">
+            <button class="intersoftic-branch-btn active" data-branch="all">Todas</button>
+            <button class="intersoftic-branch-btn" data-branch="san_miguel">San Miguel</button>
+            <button class="intersoftic-branch-btn" data-branch="ituzaingo">Ituzaingó</button>
+            <button class="intersoftic-branch-btn" data-branch="merlo">Merlo</button>
+          </div>
+
+          <div class="audit-search-row">
+            <div class="search-bar">
+              <i class="fas fa-search"></i>
+              <input
+                type="text"
+                id="audit-search"
+                placeholder="Buscar paciente, afiliado, prestación, ID u orden..."
+                autocomplete="off"
+              />
+            </div>
+          </div>
+
+          <div id="audit-summary" class="panel-grid"></div>
+
+          <div id="audit-container">
+            <!-- JS renders audit content here -->
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Modal Historial -->
+    <div id="history-modal" class="modal">
+      <div class="modal-content glass history-modal-content">
+        <span class="close-history-modal close-modal">&times;</span>
+        <h2 id="history-patient-name">Cronograma de Renovaciones</h2>
+        <div class="history-list-container">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Año/Mes</th>
+                <th>Desde</th>
+                <th>Hasta</th>
+                <th>Hora</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="history-body">
+              <!-- JS populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Renovación -->
+    <div id="renovate-modal" class="modal">
+      <div class="modal-content glass modal-lg hd-intake-modal">
+        <span class="close-modal">&times;</span>
+        <h2>Renovar Historia Clínica</h2>
+        <p id="ren-patient-name"></p>
+        <div class="form-group">
+          <label>Año de Renovación</label>
+          <input type="number" id="ren-year" />
+        </div>
+        <div class="form-group">
+          <label>Mes de Renovación</label>
+          <input type="number" id="ren-month" min="1" max="12" />
+        </div>
+        <div class="form-group highlight-alt">
+          <label>Fecha Inicio Periodo</label>
+          <input type="date" id="ren-f-inicio" />
+        </div>
+        <div class="form-group highlight-alt">
+          <label>Cantidad de Turnos (10 días c/u)</label>
+          <input type="number" id="ren-qty" value="1" min="1" />
+        </div>
+        <button
+          id="confirm-renovate"
+          class="btn-primary"
+          style="margin-top: 15px; width: 100%"
+        >
+          Confirmar
+        </button>
+      </div>
+    </div>
+
+    <!-- Modal Editar Historial -->
+    <div id="edit-history-modal" class="modal">
+      <div class="modal-content glass">
+        <span class="close-edit-history-modal close-modal">&times;</span>
+        <h2>Editar Registro de Renovación</h2>
+        <div class="form-group">
+          <label>Año</label>
+          <input type="number" id="edit-ren-year" />
+        </div>
+        <div class="form-group">
+          <label>Mes</label>
+          <input type="number" id="edit-ren-month" min="1" max="12" />
+        </div>
+        <div class="form-group highlight-alt">
+          <label>Fecha Inicio</label>
+          <input type="date" id="edit-ren-f-inicio" />
+        </div>
+        <div class="form-group highlight-alt">
+          <label>Fecha Finalización</label>
+          <input type="date" id="edit-ren-f-fin" />
+        </div>
+        <button
+          id="save-edit-history"
+          class="btn-primary"
+          style="margin-top: 15px; width: 100%"
+        >
+          Guardar Cambios
+        </button>
+      </div>
+    </div>
+
+    <!-- Modal Neurocognitivo -->
+    <div id="neuro-modal" class="modal">
+      <div class="modal-content glass modal-lg">
+        <span class="close-neuro-modal close-modal">&times;</span>
+        <h2 id="neuro-modal-title">Nuevo Turno Neurocognitivo</h2>
+        <form id="neuro-form" class="neuro-grid-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Fecha del Turno</label>
+              <input type="date" id="neuro-fecha" required />
+            </div>
+            <div class="form-group">
+              <label>Hora</label>
+              <select id="neuro-hora" required></select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>DNI</label>
+              <input
+                type="text"
+                id="neuro-dni"
+                placeholder="00.000.000"
+                inputmode="numeric"
+                autocomplete="off"
+              />
+              <small
+                id="neuro-dni-status"
+                class="dni-status"
+                aria-live="polite"
+              ></small>
+            </div>
+            <div class="form-group">
+              <label>Nombre del Paciente</label>
+              <input
+                type="text"
+                id="neuro-paciente"
+                required
+                placeholder="Nombre completo"
+              />
+            </div>
+          </div>
+
+          <div class="form-row three-cols">
+            <div class="form-group">
+              <label>Fecha de Nacimiento</label>
+              <input type="date" id="neuro-fecha-nacimiento" />
+            </div>
+            <div class="form-group">
+              <label>Domicilio</label>
+              <input type="text" id="neuro-domicilio" placeholder="Calle y número" />
+            </div>
+            <div class="form-group">
+              <label>Localidad</label>
+              <input type="text" id="neuro-localidad" placeholder="San Miguel" />
+            </div>
+          </div>
+
+          <div class="form-row three-cols">
+            <div class="form-group">
+              <label>Teléfono 1</label>
+              <input type="text" id="neuro-tlf1" />
+            </div>
+            <div class="form-group">
+              <label>Teléfono 2</label>
+              <input type="text" id="neuro-tlf2" />
+            </div>
+            <div class="form-group">
+              <label>N° Beneficio</label>
+              <input type="text" id="neuro-beneficio" />
+            </div>
+          </div>
+
+          <div class="form-row three-cols">
+            <div class="form-group">
+              <label>Número de OP</label>
+              <input type="text" id="neuro-op" />
+            </div>
+            <div class="form-group">
+              <label>Fecha de OP</label>
+              <input type="date" id="neuro-fecha-op" />
+            </div>
+            <div class="form-group">
+              <label>Cápita / Clínica</label>
+              <input type="text" id="neuro-capita" placeholder="CRI / Otro" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Ruta de PDF / Documentación</label>
+            <input
+              type="text"
+              id="neuro-link"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Observaciones</label>
+            <textarea
+              id="neuro-obs"
+              rows="2"
+              placeholder="Notas adicionales..."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Asistencia a la sesión</label>
+            <select id="neuro-asistencia">
+              <option value="pendiente">Pendiente</option>
+              <option value="asistio">Asistió</option>
+              <option value="falto">Faltó</option>
+            </select>
+          </div>
+
+          <div class="aviso-section">
+            <div class="aviso-grid">
+              <div class="radio-group">
+                <label
+                  ><input type="radio" name="aviso-tipo" value="whatsapp" />
+                  WhatsApp</label
+                >
+                <label
+                  ><input type="radio" name="aviso-tipo" value="llamada" />
+                  Llamada</label
+                >
+                <label
+                  ><input type="radio" name="aviso-tipo" value="presencial" />
+                  Presencial</label
+                >
+              </div>
+              <div class="checkbox-group">
+                <label>
+                  <input type="checkbox" id="neuro-avisado" /> ¿Ya avisado?
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <input type="hidden" id="neuro-id" />
+          <button
+            type="submit"
+            class="btn-primary"
+            style="margin-top: 10px; height: 50px; font-weight: bold"
+          >
+            <i class="fas fa-save"></i> GUARDAR REGISTRO
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal WhatsApp -->
+    <div id="wa-modal" class="modal">
+      <div class="modal-content glass">
+        <span class="close-wa-modal close-modal">&times;</span>
+        <h2>Enviar Mensaje WhatsApp</h2>
+        <p
+          id="wa-patient-name"
+          style="font-weight: 600; margin-bottom: 15px"
+        ></p>
+        <div class="whatsapp-menu">
+          <div class="whatsapp-option" data-type="turno">
+            <strong>📅 Aviso de Turno</strong><br />
+            <small
+              >"Buen día, le informamos que su turno fue programado
+              para..."</small
+            >
+          </div>
+          <div class="whatsapp-option" data-type="informe">
+            <strong>📩 Envío de Informe</strong><br />
+            <small
+              >"Hola, buen día! Les enviamos el informe
+              correspondiente..."</small
+            >
+          </div>
+          <div class="whatsapp-option" data-type="orden">
+            <strong>📄 Orden Médica Lista</strong><br />
+            <small
+              >"Le informamos que la profesional dejó una orden para
+              usted..."</small
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alert Dialog (Cajón) -->
+    <div id="alert-modal" class="modal alert">
+      <div class="modal-content glass">
+        <i class="fas fa-exclamation-triangle warning-icon"></i>
+        <h3>TRASLADO FÍSICO REQUERIDO</h3>
+        <p id="alert-text"></p>
+        <button class="btn-primary" onclick="closeAlert()">Entendido</button>
+      </div>
+    </div>
+
+    <!-- Modal Agenda General (Nuevo Turno) -->
+    <div id="appointment-modal" class="modal">
+      <div class="modal-content glass">
+        <span class="close-appointment-modal close-modal">&times;</span>
+        <h2>Nuevo Turno (Agenda General)</h2>
+        <form id="appointment-form">
+          <div class="form-group">
+            <label>Buscar Paciente (DNI o Apellido)</label>
+            <input
+              type="text"
+              id="app-patient-search"
+              placeholder="Escriba para buscar..."
+              autocomplete="off"
+            />
+            <div id="search-results-app" class="search-suggestions"></div>
+            <input type="hidden" id="app-patient-id" />
+            <input type="hidden" id="app-recurso" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Fecha</label>
+              <input type="date" id="app-fecha" required />
+            </div>
+            <div class="form-group">
+              <label>Hora</label>
+              <input type="time" id="app-hora" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Tipo de Sesión / Especialidad</label>
+            <select
+              id="app-tipo"
+              class="glass-input"
+              style="width: 100%; padding: 10px; border-radius: 8px"
+            >
+              <option value="Kinesiología">Kinesiología</option>
+              <option value="Fonoaudiología">Fonoaudiología</option>
+              <option value="Psicología">Psicología</option>
+              <option value="Psicopedagogía">Psicopedagogía</option>
+              <option value="Terapia Ocupacional">Terapia Ocupacional</option>
+              <option value="Médico">Médico</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Observaciones</label>
+            <textarea id="app-obs" rows="2"></textarea>
+          </div>
+
+          <div
+            style="
+              background: rgba(0, 122, 255, 0.05);
+              padding: 15px;
+              border-radius: 12px;
+              margin-top: 10px;
+              border: 1px dashed var(--primary);
+            "
+          >
+            <label
+              style="
+                font-weight: 700;
+                color: var(--primary);
+                display: block;
+                margin-bottom: 10px;
+              "
+            >
+              <i class="fas fa-redo"></i> PROGRAMAR CICLO (10 SESIONES)
+            </label>
+            <div
+              class="checkbox-group"
+              style="
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+                margin-bottom: 10px;
+              "
+            >
+              <label
+                ><input type="checkbox" name="app-days" value="1" /> Lun</label
+              >
+              <label
+                ><input type="checkbox" name="app-days" value="2" /> Mar</label
+              >
+              <label
+                ><input type="checkbox" name="app-days" value="3" /> Mie</label
+              >
+              <label
+                ><input type="checkbox" name="app-days" value="4" /> Jue</label
+              >
+              <label
+                ><input type="checkbox" name="app-days" value="5" /> Vie</label
+              >
+            </div>
+            <small style="color: var(--text-muted)"
+              >Se agendarán las próximas 10 sesiones en los días
+              marcados.</small
+            >
+            <div
+              id="cycle-summary"
+              style="
+                margin-top: 10px;
+                font-weight: 700;
+                color: #28a745;
+                font-size: 0.9rem;
+                display: none;
+              "
+            >
+              <i class="fas fa-calendar-check"></i> Ciclo:
+              <span id="cycle-range-text">- al -</span>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            class="btn-primary"
+            style="
+              width: 100%;
+              margin-top: 20px;
+              height: 50px;
+              font-size: 1.1rem;
+            "
+          >
+            <i class="fas fa-save"></i> GUARDAR TURNO / CICLO
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <script src="app.js?v=20260522-agenda-cuadrito-por-paciente"></script>
+    <!-- Modal Hospital de Día -->
+    <div id="hd-modal" class="modal">
+      <div class="modal-content glass">
+        <span class="close-hd-modal close-modal">&times;</span>
+        <h2>Ingreso Hospital de Día</h2>
+        <p class="hd-intake-subtitle">
+          Cargá la ficha completa del paciente y los datos de Hospital de Día
+          en un solo paso.
+        </p>
+        <form id="hd-form" class="hd-intake-form">
+          <input type="hidden" id="hd-id" />
+          <input type="hidden" id="hd-patient-id" />
+          <div class="hd-intake-banner">
+            <div>
+              <strong>Paciente nuevo o existente</strong>
+              <span>
+                Si ya está en el sistema, buscá por nombre o DNI y completamos
+                la ficha desde la base.
+              </span>
+            </div>
+          </div>
+          <div class="form-group hd-form-search">
+            <label>Buscar paciente existente</label>
+            <input
+              type="text"
+              id="hd-patient-search"
+              placeholder="Escribí nombre o DNI si ya existe..."
+              autocomplete="off"
+            />
+            <div id="search-results-hd" class="search-suggestions"></div>
+          </div>
+          <h3 class="hd-intake-title">Datos del Paciente</h3>
+          <div class="hd-intake-grid">
+            <div class="form-group">
+              <label>Apellido y Nombre</label>
+              <input type="text" id="hd-apellido-nombre" required />
+            </div>
+            <div class="form-group">
+              <label>DNI</label>
+              <input type="text" id="hd-dni" required />
+            </div>
+            <div class="form-group">
+              <label>Fecha de Nacimiento</label>
+              <input type="date" id="hd-fecha-nacimiento" />
+            </div>
+            <div class="form-group">
+              <label>N° Beneficio</label>
+              <input type="text" id="hd-beneficio" />
+            </div>
+            <div class="form-group">
+              <label>N&deg; Historia Cl&iacute;nica</label>
+              <input type="text" id="hd-num-hc" readonly />
+            </div>
+            <div class="form-group hd-span-2">
+              <label>Domicilio</label>
+              <input type="text" id="hd-domicilio" />
+            </div>
+            <div class="form-group">
+              <label>Tel&eacute;fono 1</label>
+              <input type="text" id="hd-telefono" />
+            </div>
+            <div class="form-group">
+              <label>Tel&eacute;fono 2</label>
+              <input type="text" id="hd-telefono2" />
+            </div>
+          </div>
+          <h3 class="hd-intake-title">Datos de Hospital de D&iacute;a</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Estado</label>
+              <select
+                id="hd-estado"
+                style="
+                  width: 100%;
+                  padding: 10px;
+                  border-radius: 8px;
+                  border: 1px solid rgba(0, 0, 0, 0.1);
+                "
+              >
+                <option value="Activo">Activo</option>
+                <option value="Suspendido">Suspendido</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Sesiones del Ciclo</label>
+              <input type="number" id="hd-sesiones-max" value="24" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Localidad</label>
+              <input
+                type="text"
+                id="hd-localidad"
+                placeholder="Ej: SM, MORENO"
+              />
+            </div>
+            <div class="form-group">
+              <label>Diagnóstico</label>
+              <input
+                type="text"
+                id="hd-diagnostico"
+                placeholder="Ej: ACV, REH MARCHA"
+              />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Orden Electrónica</label>
+            <input type="text" id="hd-orden-elect" />
+          </div>
+
+          <h3 class="hd-intake-title">
+            Órdenes de Prestación (OPs)
+          </h3>
+          <div id="ops-container" class="hd-ops-container">
+            <!-- JS will add OP inputs -->
+          </div>
+          <button
+            type="button"
+            class="btn-secondary"
+            onclick="addOPInput()"
+            style="margin-top: 10px"
+          >
+            <i class="fas fa-plus"></i> Agregar OP
+          </button>
+
+          <button
+            type="submit"
+            class="btn-primary"
+            style="width: 100%; margin-top: 20px"
+          >
+            <i class="fas fa-save"></i> GUARDAR EN HD/AUDITORIA
+          </button>
+        </form>
+      </div>
+    </div>
+  
+    <!-- Progress Overlay -->
+    <div id='sync-overlay' class='modal-overlay' style='display: none; z-index: 9999;'>
+      <div class='glass modal-content' style='max-width: 400px; text-align: center; padding: 30px;'>
+        <h2 id='sync-title'>Sincronizando</h2>
+        <div class='progress-container' style='margin: 20px 0; background: rgba(0,0,0,0.1); border-radius: 10px; height: 12px; overflow: hidden;'>
+          <div id='sync-progress-bar' style='width: 0%; height: 100%; background: var(--primary); transition: width 0.3s ease;'></div>
+        </div>
+        <p id='sync-msg' style='font-weight: 600; color: var(--text-muted);'>Iniciando...</p>
+      </div>
+    </div>
+  </body>
+</html>
