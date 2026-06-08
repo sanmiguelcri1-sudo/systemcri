@@ -1,6 +1,6 @@
-# SYSTEMCRI
+# SYSTEMCRI Intersoftic
 
-Sistema central para controlar las tres sucursales: San Miguel, Ituzaingo y Merlo.
+Sistema local para revisar Estadística Intersoftic y Auditoría Intersoftic de San Miguel, Ituzaingo y Merlo.
 
 ## Como se usa como programa local
 
@@ -11,12 +11,10 @@ Sistema central para controlar las tres sucursales: San Miguel, Ituzaingo y Merl
 
 No se abre Chrome/Edge como navegador y no hace falta publicarlo en internet. Mientras se usa el sistema, dejar abierta la ventana del ejecutable.
 
-La base local queda en la misma carpeta del exe como `hc_archive.db`. Si se recompila el programa, no borrar esa base si ya tiene datos cargados.
-
 ## Alcance local
 
 SYSTEMCRI queda disponible solo en la PC donde se ejecuta. Esto permite usar los drivers y accesos locales necesarios para Intersoftic sin exponer el sistema en internet ni en otras maquinas de la red.
 
 ## Tiempo real
 
-Las pantallas de Estadistica Intersoftic y Auditoria se actualizan automaticamente cada 30 segundos mientras estan abiertas. Los botones de actualizar siguen disponibles para forzar una consulta manual.
+Las dos pantallas consultan Intersoftic al abrir o al usar el boton `Actualizar`.

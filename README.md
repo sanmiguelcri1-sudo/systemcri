@@ -1,6 +1,6 @@
-# SYSTEMCRI
+# SYSTEMCRI Intersoftic
 
-Aplicación local para gestión y auditoría Intersoftic.
+Aplicación local enfocada solo en Estadística Intersoftic y Auditoría Intersoftic.
 
 ## Usar como programa
 

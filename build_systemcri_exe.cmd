@@ -20,10 +20,6 @@ if exist ".env" (
   if not exist "dist\.env" copy /Y ".env.example" "dist\.env" >nul
 )
 
-if exist "hc_archive.db" (
-  copy /Y "hc_archive.db" "dist\hc_archive.db" >nul
-)
-
 echo.
 echo Listo: dist\SYSTEMCRI.exe
 echo Deje dist\.env junto al exe para la conexion a Intersoftic.

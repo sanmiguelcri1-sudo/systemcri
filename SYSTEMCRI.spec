@@ -9,7 +9,6 @@ datas = [
     ("static", "static"),
     ("intersoftic_manual_2026.json", "."),
     ("intersoftic_manual_2026_by_branch.json", "."),
-    ("hc_archive.db", "."),
 ]
 
 hiddenimports = (
@@ -17,7 +16,7 @@ hiddenimports = (
     + collect_submodules("fastapi")
     + collect_submodules("pydantic")
     + collect_submodules("webview")
-    + ["pyodbc", "pymssql", "docx", "imap_tools", "docx2pdf"]
+    + ["pyodbc", "pymssql"]
 )
 
 a = Analysis(

@@ -1,13 +1,7 @@
 fastapi
 uvicorn[standard]
-pydantic
 python-dotenv
 pyodbc
 pymssql
-openpyxl
-python-docx
-requests
-imap-tools
-docx2pdf
 pyinstaller
 pywebview

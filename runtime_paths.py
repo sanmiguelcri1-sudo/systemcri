@@ -40,5 +40,3 @@ def load_local_env() -> None:
 
 def configure_exe_environment() -> None:
     load_local_env()
-    if not is_frozen():
-        os.environ.setdefault("SQLITE_DB_PATH", str(external_path("hc_archive.db")))
