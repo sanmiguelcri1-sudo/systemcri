@@ -8,4 +8,9 @@ Aplicación local enfocada solo en Estadística Intersoftic y Auditoría Interso
 2. Abrir `dist\SYSTEMCRI.exe`.
 3. Dejar `dist\.env` junto al ejecutable con los datos reales.
 
-SYSTEMCRI abre una ventana propia de escritorio. No hace falta Vercel ni abrirlo desde Chrome/Edge.
+SYSTEMCRI abre una ventana propia de escritorio.
+## Autor y licencia
+
+Autor: Jose Arturo Azocar
+
+Licencia: MIT

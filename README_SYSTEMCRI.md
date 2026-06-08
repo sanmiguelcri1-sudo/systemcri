@@ -18,3 +18,9 @@ SYSTEMCRI queda disponible solo en la PC donde se ejecuta. Esto permite usar los
 ## Tiempo real
 
 Las dos pantallas consultan Intersoftic al abrir o al usar el boton `Actualizar`.
+
+## Autor y licencia
+
+Autor: Jose Arturo Azocar
+
+Licencia: MIT

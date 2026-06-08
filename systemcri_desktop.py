@@ -11,6 +11,13 @@ import uvicorn
 from runtime_paths import configure_exe_environment
 
 
+def _ensure_stdio() -> None:
+    if sys.stdout is None:
+        sys.stdout = open(os.devnull, "w", encoding="utf-8")
+    if sys.stderr is None:
+        sys.stderr = open(os.devnull, "w", encoding="utf-8")
+
+
 def _port_is_open(host: str, port: int) -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.settimeout(0.5)
@@ -45,6 +52,7 @@ def _find_free_port(host: str, preferred_port: int) -> int:
 
 def main() -> int:
     freeze_support()
+    _ensure_stdio()
     configure_exe_environment()
 
     host = "127.0.0.1"
@@ -72,6 +80,7 @@ def main() -> int:
         host=host,
         port=port,
         log_level=os.environ.get("SYSTEMCRI_LOG_LEVEL", "info"),
+        log_config=None,
         access_log=False,
     )
     uvicorn_server = uvicorn.Server(config)

@@ -158,7 +158,7 @@
       if (meta) meta.textContent = `Año ${data.year || "2026"} · Actualizado ${new Date().toLocaleString("es-AR")}`;
       renderStats();
     } catch (error) {
-      if (meta) meta.textContent = "Error al actualizar.";
+      if (meta) meta.textContent = "No se pudo actualizar.";
       if (body) body.innerHTML = `<tr><td colspan="12">${escapeHtml(error.message)}</td></tr>`;
     } finally {
       if (btn) btn.disabled = false;
@@ -213,6 +213,11 @@
       : alertCount
         ? `<span class="audit-badge audit-badge-alert">${fmt(alertCount)} alertas</span>`
         : `<span class="audit-badge audit-badge-ok">Sin alertas</span>`;
+    const branchStateClass = branch.available === false
+      ? "audit-branch-offline"
+      : alertCount
+        ? "audit-branch-alert"
+        : "audit-branch-ok";
 
     const rawSourceErrors = branch.source_errors || (branch.sql_error ? [branch.sql_error] : []);
     const sourceErrors = rawSourceErrors
@@ -266,7 +271,7 @@
     );
 
     return `
-      <article class="audit-branch-block">
+      <article class="audit-branch-block ${branchStateClass}">
         <div class="audit-branch-head">
           <h2>${escapeHtml(branch.branch)}</h2>
           ${badge}
@@ -348,7 +353,7 @@
       if (meta) meta.textContent = `Año ${data.year || "2026"} · Actualizado ${new Date().toLocaleString("es-AR")}`;
       renderAudit();
     } catch (error) {
-      if (meta) meta.textContent = "Error al actualizar.";
+      if (meta) meta.textContent = "No se pudo actualizar.";
       if (container) container.innerHTML = `<div class="message-box">${escapeHtml(error.message)}</div>`;
     } finally {
       if (btn) btn.disabled = false;
