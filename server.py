@@ -12,10 +12,17 @@ from typing import List, Optional, Dict
 from urllib.parse import quote
 
 try:
-    from dotenv import load_dotenv
-    load_dotenv(Path(__file__).with_name(".env"), override=False)
+    from runtime_paths import bundled_path, configure_exe_environment, external_path, is_frozen
+    configure_exe_environment()
 except Exception:
-    pass
+    def bundled_path(*parts):
+        return Path(__file__).resolve().parent.joinpath(*parts)
+
+    def external_path(*parts):
+        return Path(__file__).resolve().parent.joinpath(*parts)
+
+    def is_frozen():
+        return False
 
 import database
 import fetch_evaluations
@@ -27,7 +34,6 @@ from utils.status import set_status, get_status
 from utils.text import validate_utf8_text
 
 app = FastAPI(title="HC API", default_response_class=JSONResponse)
-PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "").strip().rstrip("/")
 
 
 def build_whatsapp_message(patient_name: Optional[str] = None) -> str:
@@ -314,9 +320,10 @@ def search_neuro(query: str, asistencia: Optional[str] = None, aviso_estado: Opt
     results = database.search_neuro_patients(query, asistencia, aviso_estado)
     return database.enrich_neuro_results([dict(r) for r in results])
 
-@app.get("/api/runtime-config")
-def get_runtime_config():
-    return {"public_base_url": PUBLIC_BASE_URL}
+@app.get("/api/health")
+def get_health():
+    return {"status": "ok", "app": "SYSTEMCRI"}
+
 
 @app.post("/api/neuro")
 def create_neuro(p: NeuroPatient):
@@ -917,18 +924,21 @@ def api_export_staff_word(payload: ExportWordPayload):
 
     return {"status": "success", "output_path": output_path_final, "backup_path": backup_path}
 
-import os
-# Asegurar la creación de la carpeta de archivos y montarla
-archivos_dir = os.path.join(os.path.dirname(__file__), "archivos_neuro")
-if not os.path.exists(archivos_dir):
-    os.makedirs(archivos_dir)
-
-app.mount("/archivos_neuro", StaticFiles(directory="archivos_neuro"), name="archivos_neuro")
+# Asegurar la creación de la carpeta de archivos y montarla solo si existe en un FS escribible.
+APP_DIR = Path(__file__).resolve().parent
+runtime_base_dir = Path(database.DB_NAME).resolve().parent if is_frozen() else APP_DIR
+archivos_dir = runtime_base_dir / "archivos_neuro"
+try:
+    archivos_dir.mkdir(parents=True, exist_ok=True)
+    if archivos_dir.is_dir():
+        app.mount("/archivos_neuro", StaticFiles(directory=str(archivos_dir)), name="archivos_neuro")
+except OSError:
+    pass
 
 # Static files
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
+app.mount("/", StaticFiles(directory=str(bundled_path("static")), html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", "8010"))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    uvicorn.run(app, host="127.0.0.1", port=port)

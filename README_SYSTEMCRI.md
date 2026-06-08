@@ -2,28 +2,21 @@
 
 Sistema central para controlar las tres sucursales: San Miguel, Ituzaingo y Merlo.
 
-## Como se usa
+## Como se usa como programa local
 
-1. Elegir una sola PC/servidor central para dejar el sistema prendido.
-2. En esa PC, ejecutar `install_dependencies.cmd` una vez.
-3. Copiar `.env.example` como `.env` y completar la clave real de Intersoftic.
-4. Ejecutar `run_server.cmd`.
-5. Abrir desde cualquier PC o celular de la misma red:
+1. Ejecutar `build_systemcri_exe.cmd` en la PC donde se prepara el sistema.
+2. Al finalizar, usar `dist\SYSTEMCRI.exe`.
+3. Dejar `dist\.env` junto al ejecutable con los datos reales de Intersoftic.
+4. Abrir `SYSTEMCRI.exe`. El programa levanta su motor interno solo local y muestra una ventana propia de SYSTEMCRI.
 
-   `http://IP_DE_LA_PC_CENTRAL:8010/`
+No se abre Chrome/Edge como navegador y no hace falta publicarlo en internet. Mientras se usa el sistema, dejar abierta la ventana del ejecutable.
 
-En esta arquitectura todos entran al mismo servidor, por eso ven la misma informacion al mismo tiempo.
+La base local queda en la misma carpeta del exe como `hc_archive.db`. Si se recompila el programa, no borrar esa base si ya tiene datos cargados.
+
+## Alcance local
+
+SYSTEMCRI queda disponible solo en la PC donde se ejecuta. Esto permite usar los drivers y accesos locales necesarios para Intersoftic sin exponer el sistema en internet ni en otras maquinas de la red.
 
 ## Tiempo real
 
 Las pantallas de Estadistica Intersoftic y Auditoria se actualizan automaticamente cada 30 segundos mientras estan abiertas. Los botones de actualizar siguen disponibles para forzar una consulta manual.
-
-## Para acceso fuera de la red
-
-Si las tres sucursales no estan en la misma red, hace falta una de estas opciones:
-
-- VPN entre sucursales.
-- Un servidor en la nube.
-- Un tunel seguro tipo Cloudflare Tunnel.
-
-Para dejarlo definitivo y seguro tambien falta definir usuarios/permisos de acceso.

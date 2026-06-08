@@ -10,8 +10,15 @@ import tempfile
 import zipfile
 from typing import Dict, Optional
 from dotenv import load_dotenv
-from imap_tools import MailBox, AND
-from docx2pdf import convert
+try:
+    from imap_tools import MailBox, AND
+except Exception:
+    MailBox = None
+    AND = None
+try:
+    from docx2pdf import convert
+except Exception:
+    convert = None
 import database
 
 load_dotenv()
@@ -20,7 +27,17 @@ EMAIL = os.getenv("HOTMAIL_EMAIL")
 PASS = os.getenv("HOTMAIL_PASS")
 SENDER = os.getenv("ALLOWED_SENDER", "rox31080@gmail.com")
 
-ARCHIVOS_DIR = os.path.join(os.path.dirname(__file__), "archivos_neuro")
+DEFAULT_ARCHIVOS_DIR = os.path.join(
+    os.path.dirname(__file__),
+    "archivos_neuro",
+)
+ARCHIVOS_DIR = os.getenv("ARCHIVOS_NEURO_DIR") or DEFAULT_ARCHIVOS_DIR
+if not os.path.exists(ARCHIVOS_DIR):
+    try:
+        os.makedirs(ARCHIVOS_DIR, exist_ok=True)
+    except OSError:
+        ARCHIVOS_DIR = os.path.join(tempfile.gettempdir(), "archivos_neuro")
+        os.makedirs(ARCHIVOS_DIR, exist_ok=True)
 DOWNLOADS_REPORTS_DIR = os.getenv("NEURO_REPORTS_DIR", r"C:\Users\Usuario\Downloads\inf-neuro")
 SUPPORTED_REPORT_EXTENSIONS = {".pdf", ".docx", ".doc"}
 _PDF_HASH_INDEX: Optional[Dict[str, str]] = None
@@ -43,6 +60,9 @@ def format_imap_error(error: Exception) -> str:
     return f"Error de conexión IMAP: {message}"
 
 def sync_reports() -> dict:
+    if MailBox is None or AND is None or convert is None:
+        return {"status": "error", "message": "Módulo de correo/PDF no disponible en este entorno."}
+
     if not os.path.exists(ARCHIVOS_DIR):
         os.makedirs(ARCHIVOS_DIR)
 

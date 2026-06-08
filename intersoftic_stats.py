@@ -9,7 +9,15 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
-import pyodbc
+try:
+    import pyodbc
+except Exception:
+    pyodbc = None
+
+try:
+    import pymssql
+except Exception:
+    pymssql = None
 
 try:
     from dotenv import load_dotenv
@@ -31,6 +39,87 @@ SQL_PASSWORD = os.environ.get("INTERSOFTIC_SQL_PASSWORD", "")
 SQL_OBRA_SOCIAL_ID = int(os.environ.get("INTERSOFTIC_OBRA_SOCIAL_ID", "8"))
 SQL_TIPO_PRESTACION_ID = int(os.environ.get("INTERSOFTIC_TIPO_PRESTACION_ID", "0"))
 SQL_OBRA_SOCIAL_DELEGACION_ID = int(os.environ.get("INTERSOFTIC_OBRA_SOCIAL_DELEGACION_ID", "0"))
+
+
+class _PymssqlCursor:
+    def __init__(self, cursor):
+        self._cursor = cursor
+
+    def execute(self, query, *params):
+        self._cursor.execute(query.replace("?", "%s"), params)
+        return self
+
+    def fetchall(self):
+        return self._cursor.fetchall()
+
+    @property
+    def description(self):
+        return self._cursor.description
+
+
+class _PymssqlConnection:
+    def __init__(self, connection):
+        self._connection = connection
+
+    def cursor(self):
+        return _PymssqlCursor(self._connection.cursor())
+
+    def close(self):
+        self._connection.close()
+
+
+def _split_sql_server(value):
+    server = str(value or "").strip()
+    if "," not in server:
+        return server, None
+    host, port = server.rsplit(",", 1)
+    try:
+        return host.strip(), int(port.strip())
+    except ValueError:
+        return server, None
+
+
+def connect_intersoftic_sql():
+    if not all([SQL_SERVER, SQL_DATABASE, SQL_USER, SQL_PASSWORD]):
+        raise RuntimeError("Falta configurar Intersoftic en .env: servidor, base, usuario y clave.")
+
+    last_error = None
+
+    if pyodbc is not None:
+        conn_str = (
+            "DRIVER={SQL Server};"
+            f"SERVER={SQL_SERVER};"
+            f"DATABASE={SQL_DATABASE};"
+            f"UID={SQL_USER};"
+            f"PWD={SQL_PASSWORD};"
+            "TrustServerCertificate=yes;"
+            "Connection Timeout=8;"
+        )
+        try:
+            return pyodbc.connect(conn_str, timeout=8)
+        except Exception as exc:
+            last_error = exc
+
+    if pymssql is not None:
+        server, port = _split_sql_server(SQL_SERVER)
+        kwargs = {
+            "server": server,
+            "user": SQL_USER,
+            "password": SQL_PASSWORD,
+            "database": SQL_DATABASE,
+            "login_timeout": 8,
+            "timeout": 30,
+        }
+        if port is not None:
+            kwargs["port"] = port
+        try:
+            return _PymssqlConnection(pymssql.connect(**kwargs))
+        except Exception as exc:
+            last_error = exc
+
+    if last_error is not None:
+        raise last_error
+    raise RuntimeError("Intersoftic SQL no está disponible en este host (ODBC no instalado y pymssql no disponible).")
 
 STAT_CODES = {
     "mdta": ("123008",),
@@ -203,9 +292,6 @@ def build_stats():
 
 
 def build_live_sql_stats(sql_sucursal_id=None):
-    if not all([SQL_SERVER, SQL_DATABASE, SQL_USER, SQL_PASSWORD]):
-        raise RuntimeError("Falta configurar Intersoftic en .env: servidor, base, usuario y clave.")
-
     stats = defaultdict(
         lambda: {
             "qty_by_code": defaultdict(float),
@@ -213,17 +299,7 @@ def build_live_sql_stats(sql_sucursal_id=None):
         }
     )
 
-    conn_str = (
-        "DRIVER={SQL Server};"
-        f"SERVER={SQL_SERVER};"
-        f"DATABASE={SQL_DATABASE};"
-        f"UID={SQL_USER};"
-        f"PWD={SQL_PASSWORD};"
-        "TrustServerCertificate=yes;"
-        "Connection Timeout=8;"
-    )
-
-    conn = pyodbc.connect(conn_str, timeout=8)
+    conn = connect_intersoftic_sql()
     try:
         cursor = conn.cursor()
         for month_num in range(1, 13):
@@ -244,7 +320,7 @@ def build_live_sql_stats(sql_sucursal_id=None):
                         SQL_OBRA_SOCIAL_DELEGACION_ID,
                     ).fetchall()
                     break
-                except pyodbc.Error as exc:
+                except Exception as exc:
                     last_exc = exc
                     if "1205" not in str(exc) or attempt == 2:
                         raise

@@ -1,11 +1,11 @@
-# systemcri
+# SYSTEMCRI
 
 Aplicación local para gestión y auditoría Intersoftic.
 
-## Ejecutar localmente
+## Usar como programa
 
-1. python -m venv .venv
-2. .\.venv\Scripts\activate
-3. pip install -r requirements.txt
-4. copy .env.example .env
-5. python -m uvicorn server:app --host 0.0.0.0 --port 8010
+1. Ejecutar `build_systemcri_exe.cmd`.
+2. Abrir `dist\SYSTEMCRI.exe`.
+3. Dejar `dist\.env` junto al ejecutable con los datos reales.
+
+SYSTEMCRI abre una ventana propia de escritorio. No hace falta Vercel ni abrirlo desde Chrome/Edge.

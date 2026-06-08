@@ -1,8 +1,31 @@
 import sqlite3
 import os
+import shutil
+from pathlib import Path
+
+from runtime_paths import bundled_path, external_path, is_frozen, load_local_env
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_NAME = os.path.join(BASE_DIR, 'hc_archive.db')
+BUNDLED_DB_NAME = str(bundled_path("hc_archive.db"))
+
+load_local_env()
+
+
+def _resolve_db_name():
+    configured_db = os.environ.get("SQLITE_DB_PATH", "").strip()
+    if configured_db:
+        return configured_db
+
+    if is_frozen():
+        runtime_db = external_path("hc_archive.db")
+        if not runtime_db.exists() and Path(BUNDLED_DB_NAME).exists():
+            shutil.copy2(BUNDLED_DB_NAME, runtime_db)
+        return str(runtime_db)
+
+    return BUNDLED_DB_NAME
+
+
+DB_NAME = _resolve_db_name()
 
 def create_connection():
     conn = sqlite3.connect(DB_NAME)

@@ -12,7 +12,10 @@ import time
 from collections import defaultdict
 from typing import Optional
 
-import pyodbc
+try:
+    import pyodbc
+except Exception:
+    pyodbc = None
 
 from intersoftic_stats import (
     BRANCHES,
@@ -25,6 +28,7 @@ from intersoftic_stats import (
     SQL_TIPO_PRESTACION_ID,
     SQL_USER,
     TARGET_YEAR,
+    connect_intersoftic_sql,
 )
 
 # ──────────────────────────────────────────────────────────────
@@ -71,19 +75,7 @@ _UGL_STATUS_CACHE = None
 
 def _connect_sql():
     """Conexión al SQL Server de Intersoftic."""
-    if not all([SQL_SERVER, SQL_DATABASE, SQL_USER, SQL_PASSWORD]):
-        raise RuntimeError("Falta configurar Intersoftic en .env: servidor, base, usuario y clave.")
-
-    conn_str = (
-        "DRIVER={SQL Server};"
-        f"SERVER={SQL_SERVER};"
-        f"DATABASE={SQL_DATABASE};"
-        f"UID={SQL_USER};"
-        f"PWD={SQL_PASSWORD};"
-        "TrustServerCertificate=yes;"
-        "Connection Timeout=8;"
-    )
-    return pyodbc.connect(conn_str, timeout=8)
+    return connect_intersoftic_sql()
 
 
 def _fetch_detail_rows(conn, sucursal_id: int, date_from: str, date_to: str) -> list:
@@ -106,7 +98,7 @@ def _fetch_detail_rows(conn, sucursal_id: int, date_from: str, date_to: str) -> 
                 SQL_OBRA_SOCIAL_DELEGACION_ID,
             ).fetchall()
             return rows
-        except pyodbc.Error as exc:
+        except Exception as exc:
             last_exc = exc
             # Deadlock retry
             if "1205" not in str(exc) or attempt == 2:
@@ -158,19 +150,29 @@ def _fetch_ugl_status_by_affiliate(conn, affiliate_numbers: set[str]) -> dict:
             ON d.id = p.OBRASOCIAL_DELEGACIONID
         WHERE p.ObraSocialID = ?
     """, SQL_OBRA_SOCIAL_ID).fetchall()
+    columns = [str(col[0]) for col in (cursor.description or [])]
+
+    def row_value(row, name, index):
+        if hasattr(row, name):
+            return getattr(row, name)
+        if isinstance(row, dict):
+            return row.get(name)
+        if name in columns:
+            return row[columns.index(name)]
+        return row[index]
 
     for row in rows:
-        raw_affiliate = str(row.NumeroSocio or "").strip()
+        raw_affiliate = str(row_value(row, "NumeroSocio", 3) or "").strip()
         key = _clean_digits(raw_affiliate.split("/")[0])
         if not key:
             continue
         result[key] = {
-            "paciente_id": row.PacienteID,
-            "paciente": str(row.paciente or "").strip(),
-            "documento": str(row.Documento or "").strip(),
+            "paciente_id": row_value(row, "PacienteID", 0),
+            "paciente": str(row_value(row, "paciente", 1) or "").strip(),
+            "documento": str(row_value(row, "Documento", 2) or "").strip(),
             "afiliado": raw_affiliate,
-            "delegacion_id": int(row.OBRASOCIAL_DELEGACIONID or 0),
-            "ugl": str(row.ugl or "").strip(),
+            "delegacion_id": int(row_value(row, "OBRASOCIAL_DELEGACIONID", 4) or 0),
+            "ugl": str(row_value(row, "ugl", 5) or "").strip(),
         }
 
     return {key: value for key, value in result.items() if key in clean_affiliates}
@@ -178,8 +180,14 @@ def _fetch_ugl_status_by_affiliate(conn, affiliate_numbers: set[str]) -> dict:
 
 def _friendly_sql_error(exc: Exception) -> str:
     text = str(exc)
-    if "Login failed for user" in text or "Atributo de cadena de conexión no válido" in text:
-        return "No se pudo autenticar en Intersoftic. Reemplazá la clave actual en .env por la contraseña real y reiniciá el servidor."
+    if (
+        "Login failed for user" in text
+        or "Atributo de cadena de conexión no válido" in text
+        or "18456" in text
+    ):
+        return "No se pudo autenticar en Intersoftic. Revisá usuario y contraseña en el archivo .env."
+    if "Adaptive Server connection failed" in text or "DB-Lib error message" in text:
+        return "No se pudo conectar a Intersoftic. Revisá servidor, puerto y permisos de acceso local."
     return text
 
 
@@ -423,6 +431,8 @@ def build_audit_all_branches() -> dict:
             results.append({
                 "branch": branch_cfg["name"],
                 "branch_id": branch_cfg["id"],
+                "status": "error",
+                "available": False,
                 "year": int(TARGET_YEAR),
                 "date_errors": [],
                 "session_errors": [],

@@ -7,33 +7,17 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const NEURO_REPORT_WHATSAPP_MESSAGE = "\u{1F4E9} Hola, buen d\u00eda! Les enviamos el informe de la evaluaci\u00f3n neurocognitiva correspondiente. Quedamos atentos ante cualquier novedad o indicaci\u00f3n. Saludos cordiales";
-    let runtimeConfigPromise = null;
-
-    async function getRuntimeConfig() {
-        if (!runtimeConfigPromise) {
-            runtimeConfigPromise = fetch('/api/runtime-config')
-                .then(res => res.ok ? res.json() : { public_base_url: "" })
-                .catch(() => ({ public_base_url: "" }));
-        }
-        return runtimeConfigPromise;
-    }
 
     function isLocalHostName(hostname) {
         return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
     }
 
-    async function getPublicPdfBaseUrl() {
-        const config = await getRuntimeConfig();
-        const configuredBaseUrl = (config.public_base_url || "").trim().replace(/\/+$/, "");
-        if (configuredBaseUrl) {
-            return configuredBaseUrl;
-        }
-
+    function getPublicPdfBaseUrl() {
         if (!isLocalHostName(window.location.hostname)) {
             return window.location.origin;
         }
 
-        throw new Error("Falta configurar la URL publica para compartir el PDF por WhatsApp.");
+        throw new Error("El PDF esta guardado en esta PC. Para enviarlo por WhatsApp, adjuntalo desde el equipo local.");
     }
 
     function isAbsoluteUrl(value) {
@@ -64,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const pdfUrl = isAbsoluteUrl(item.link_pdf)
                 ? item.link_pdf.trim()
-                : new URL(item.link_pdf, `${await getPublicPdfBaseUrl()}/`).toString();
+                : new URL(item.link_pdf, `${getPublicPdfBaseUrl()}/`).toString();
             const fullPhone = phone.startsWith('54') ? phone : `54${phone}`;
             const message = `${NEURO_REPORT_WHATSAPP_MESSAGE}\n\n${pdfUrl}`;
             window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`, '_blank');
@@ -2191,6 +2175,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!auditSummary) return;
         const totals = (branches || []).reduce((acc, branch) => {
             const summary = branch.summary || {};
+            if (branch.available === false || branch.status === 'error' || branch.sql_error) {
+                acc.unavailable += 1;
+            }
             acc.date += Number(summary.total_date_errors || 0);
             acc.sessions += Number(summary.total_session_errors || 0);
             acc.ugl += Number(summary.total_ugl_errors || 0);
@@ -2198,13 +2185,13 @@ document.addEventListener('DOMContentLoaded', () => {
             acc.saturdays += Number(summary.sabados_count || 0);
             acc.sundays += Number(summary.domingos_count || 0);
             return acc;
-        }, { date: 0, sessions: 0, ugl: 0, holidays: 0, saturdays: 0, sundays: 0 });
+        }, { date: 0, sessions: 0, ugl: 0, holidays: 0, saturdays: 0, sundays: 0, unavailable: 0 });
 
         const cards = [
             { label: 'Errores de Fecha', value: totals.date, sub: `${totals.holidays} feriados | ${totals.saturdays} sábados | ${totals.sundays} domingos`, tone: totals.date ? 'audit-stat-danger' : 'audit-stat-ok' },
             { label: 'Más de 10 Sesiones', value: totals.sessions, sub: 'Por paciente y por mes', tone: totals.sessions ? 'audit-stat-warn' : 'audit-stat-ok' },
             { label: 'UGL Incorrecta', value: totals.ugl, sub: 'Según sucursal de facturación', tone: totals.ugl ? 'audit-stat-warn' : 'audit-stat-ok' },
-            { label: 'Sucursales Revisadas', value: branches.length, sub: 'San Miguel, Ituzaingó y Merlo', tone: 'panel-stat-primary' },
+            { label: 'Sucursales Revisadas', value: Math.max(0, branches.length - totals.unavailable), sub: totals.unavailable ? `${totals.unavailable} sin conexión SQL` : 'San Miguel, Ituzaingó y Merlo', tone: totals.unavailable ? 'audit-stat-warn' : 'panel-stat-primary' },
         ];
 
         auditSummary.innerHTML = cards.map(card => `
@@ -2232,7 +2219,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const sqlErrorText = branch.sql_error || (sourceErrors.length ? sourceErrors.join(' | ') : '');
             const friendlySqlError = (sqlErrorText || '').replace(/\('28000'.*?\)/g, 'No se pudo autenticar en Intersoftic. Reemplazá la clave real en .env y reiniciá el servidor.');
             const sqlError = friendlySqlError ? `<div class="audit-sql-error"><i class="fas fa-database"></i>${escapeHtml(friendlySqlError)}</div>` : '';
-            const statusBadge = hasErrors
+            const isUnavailable = branch.available === false || branch.status === 'error' || Boolean(friendlySqlError);
+            const statusBadge = isUnavailable
+                ? '<span class="audit-badge audit-badge-alert">No ejecutada</span>'
+                : hasErrors
                 ? `<span class="audit-badge audit-badge-alert">${dateErrors.length + sessionErrors.length + uglErrors.length} observaciones</span>`
                 : '<span class="audit-badge audit-badge-ok">Sin observaciones</span>';
 
@@ -2276,7 +2266,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </tr>
             `).join('');
 
-            const emptyBlock = !hasErrors && !branch.sql_error
+            const emptyBlock = !hasErrors && !isUnavailable
                 ? '<div class="audit-all-ok"><i class="fas fa-circle-check"></i>No se encontraron errores para esta sucursal.</div>'
                 : '';
 
