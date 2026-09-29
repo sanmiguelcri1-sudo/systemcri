@@ -427,8 +427,12 @@
     body.innerHTML = filtered
       .map((row) => {
         const pct = Math.min(100, Math.max(0, (row.sesiones_regulares / 60) * 100));
-        const badgeClass = row.estado === "hd_activo" ? "hd" : row.estado === "sobre_limite" || row.estado === "hd_excedido" ? "blocked" : row.estado === "aviso_sin_hd" ? "alert" : "ok";
-        const aviso = row.estado === "aviso_sin_hd"
+        const badgeClass = row.sesiones_regulares >= 60 || row.estado === "sobre_limite" || row.estado === "hd_excedido"
+          ? "blocked"
+          : row.estado === "hd_activo" ? "hd" : row.estado === "aviso_sin_hd" ? "alert" : "ok";
+        const aviso = row.sesiones_regulares >= 60
+          ? "Límite alcanzado (60)"
+          : row.estado === "aviso_sin_hd"
           ? "Aviso: sin HD adicional"
           : row.estado === "sobre_limite"
             ? "Excede 60 regulares"
