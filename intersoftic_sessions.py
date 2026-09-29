@@ -20,10 +20,13 @@ from intersoftic_stats import (
     normalize_practice_code,
 )
 
-# MDCS/MDTA (límite anual 50) y Hospital de Día.
-MDTA_CODES = set(STAT_CODES["mdta"]) | {"123007", "123008"}
+# MDTA, Cápita y demás módulos regulares comparten un límite anual de 60.
+# HD es el único módulo adicional permitido, hasta 5 sesiones.
+REGULAR_CODES = (set().union(*STAT_CODES.values()) | {"123007", "123008"}) - set(STAT_CODES["hd"])
 HD_CODES = set(STAT_CODES["hd"])
-ANNUAL_LIMIT = 50
+ANNUAL_LIMIT = 60
+DISPLAY_FROM = 50
+HD_ADDITIONAL_LIMIT = 5
 
 def _connect_sql():
     return connect_intersoftic_sql()
@@ -85,7 +88,7 @@ def build_sessions_for_branch(branch_cfg: dict) -> dict:
                     paciente = str(row[12] or "").strip() if len(row) > 12 else ""
                     afiliado = str(row[3] or "").strip() if len(row) > 3 else ""
                     codigo = find_tracked_practice_code(row, row[8] if len(row) > 8 else "")
-                    if codigo not in MDTA_CODES and codigo not in HD_CODES:
+                    if codigo not in REGULAR_CODES and codigo not in HD_CODES:
                         codigo = normalize_practice_code(row[8] if len(row) > 8 else "")
 
                     if not paciente or not afiliado or not codigo:
@@ -96,7 +99,7 @@ def build_sessions_for_branch(branch_cfg: dict) -> dict:
 
                     if codigo in HD_CODES:
                         patients_data[pac_key]["hd_dates"].add(fecha_str)
-                    elif codigo in MDTA_CODES:
+                    elif codigo in REGULAR_CODES:
                         patients_data[pac_key]["regulares_dates"].add(fecha_str)
                 except Exception:
                     continue
@@ -109,25 +112,20 @@ def build_sessions_for_branch(branch_cfg: dict) -> dict:
         sesiones_regulares = len(data["regulares_dates"])
         sesiones_hd = len(data["hd_dates"])
         
-        # Mostrar todos los pacientes (aún si tienen < 50) para que la tabla no esté vacía.
-        if sesiones_regulares == 0 and sesiones_hd == 0:
+        # La vista operativa muestra pacientes desde 50 sesiones regulares.
+        if sesiones_regulares < DISPLAY_FROM:
             continue
             
         tiene_hd = sesiones_hd > 0
         
-        # La vista anual se limita a pacientes que están dentro del rango
-        # operativo solicitado: hasta 50 sesiones regulares inclusive.
         if sesiones_regulares > ANNUAL_LIMIT:
-            continue
-
-        if tiene_hd:
-            estado = "hd_activo"
-        elif sesiones_regulares == ANNUAL_LIMIT:
-            estado = "limite"
-        elif sesiones_regulares >= 40:
-            estado = "alerta"
+            estado = "sobre_limite"
+        elif sesiones_hd > HD_ADDITIONAL_LIMIT:
+            estado = "hd_excedido"
+        elif not tiene_hd:
+            estado = "aviso_sin_hd"
         else:
-            estado = "ok"
+            estado = "hd_activo"
 
         session_rows.append({
             "paciente": paciente,
@@ -145,8 +143,9 @@ def build_sessions_for_branch(branch_cfg: dict) -> dict:
     
     summary = {
         "total_pacientes": len(session_rows),
-        "total_alerta": sum(1 for row in session_rows if row["estado"] == "alerta"),
-        "total_limite": sum(1 for row in session_rows if row["estado"] == "limite"),
+        "total_aviso_sin_hd": sum(1 for row in session_rows if row["estado"] == "aviso_sin_hd"),
+        "total_sobre_limite": sum(1 for row in session_rows if row["estado"] == "sobre_limite"),
+        "total_hd_excedido": sum(1 for row in session_rows if row["estado"] == "hd_excedido"),
         "total_hd": sum(1 for row in session_rows if row["estado"] == "hd_activo"),
     }
 
@@ -168,8 +167,9 @@ def build_sessions_all_branches() -> dict:
         "rows": [],
         "summary": {
             "total_pacientes": 0,
-            "total_alerta": 0,
-            "total_limite": 0,
+            "total_aviso_sin_hd": 0,
+            "total_sobre_limite": 0,
+            "total_hd_excedido": 0,
             "total_hd": 0,
         },
         "status": "error",
@@ -208,8 +208,9 @@ def build_sessions_all_branches() -> dict:
     
     grand_summary = {
         "total_pacientes": len(all_rows),
-        "total_alerta": sum(1 for row in all_rows if row["estado"] == "alerta"),
-        "total_limite": sum(1 for row in all_rows if row["estado"] == "limite"),
+        "total_aviso_sin_hd": sum(1 for row in all_rows if row["estado"] == "aviso_sin_hd"),
+        "total_sobre_limite": sum(1 for row in all_rows if row["estado"] == "sobre_limite"),
+        "total_hd_excedido": sum(1 for row in all_rows if row["estado"] == "hd_excedido"),
         "total_hd": sum(1 for row in all_rows if row["estado"] == "hd_activo"),
     }
 

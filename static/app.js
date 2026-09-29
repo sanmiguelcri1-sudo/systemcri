@@ -393,21 +393,24 @@
 
     const filtered = rows.filter(sessionsMatchesSearch);
 
-    let totalAlerts = 0;
-    let totalLimit = 0;
+    let totalNoHd = 0;
+    let totalOverLimit = 0;
+    let totalHdOver = 0;
     let totalHd = 0;
 
     filtered.forEach((r) => {
-      if (r.estado === "alerta") totalAlerts++;
-      if (r.estado === "limite") totalLimit++;
+      if (r.estado === "aviso_sin_hd") totalNoHd++;
+      if (r.estado === "sobre_limite") totalOverLimit++;
+      if (r.estado === "hd_excedido") totalHdOver++;
       if (r.estado === "hd_activo") totalHd++;
     });
 
     summaryEl.innerHTML = [
       statCard("Pacientes", filtered.length, "Total en el filtro"),
-      statCard("En Alerta", totalAlerts, "Entre 40 y 49 (sin HD)", totalAlerts ? "stat-warn" : "stat-ok"),
-      statCard("Límite", totalLimit, "50 sesiones (sin HD)", totalLimit ? "stat-danger" : "stat-ok"),
-      statCard("Con HD", totalHd, "Hospital de Día", "stat-ok"),
+      statCard("Aviso sin HD", totalNoHd, "50 a 60 sin HD adicional", totalNoHd ? "stat-warn" : "stat-ok"),
+      statCard("Sobre 60", totalOverLimit, "Sesiones regulares excedidas", totalOverLimit ? "stat-danger" : "stat-ok"),
+      statCard("HD excedido", totalHdOver, "Más de 5 sesiones HD", totalHdOver ? "stat-danger" : "stat-ok"),
+      statCard("HD permitido", totalHd, "Hasta 5 sesiones adicionales", "stat-ok"),
     ].join("");
 
     if (!filtered.length) {
@@ -417,14 +420,23 @@
       const extra = errors.length
         ? `<br><small>${escapeHtml(errors.slice(0, 3).join(" · "))}</small>`
         : "";
-      body.innerHTML = `<tr><td colspan="7">No hay datos de sesiones para mostrar.${extra}</td></tr>`;
+      body.innerHTML = `<tr><td colspan="8">No hay datos de sesiones para mostrar.${extra}</td></tr>`;
       return;
     }
 
     body.innerHTML = filtered
       .map((row) => {
-        const pct = Math.min(100, Math.max(0, (row.sesiones_regulares / 50) * 100));
-        let badgeClass = row.estado === "hd_activo" ? "hd" : row.estado === "limite" ? "blocked" : row.estado === "alerta" ? "alert" : "ok";
+        const pct = Math.min(100, Math.max(0, (row.sesiones_regulares / 60) * 100));
+        const badgeClass = row.estado === "hd_activo" ? "hd" : row.estado === "sobre_limite" || row.estado === "hd_excedido" ? "blocked" : row.estado === "aviso_sin_hd" ? "alert" : "ok";
+        const aviso = row.estado === "aviso_sin_hd"
+          ? "Aviso: sin HD adicional"
+          : row.estado === "sobre_limite"
+            ? "Excede 60 regulares"
+            : row.estado === "hd_excedido"
+              ? "HD supera 5"
+              : row.estado === "hd_activo"
+                ? "HD permitido (+5)"
+                : "Dentro del límite";
         
         return `
           <tr>
@@ -437,12 +449,13 @@
             <td>
               <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:700; margin-bottom:2px;">
                 <span>${fmt(row.sesiones_regulares)}</span>
-                <span>50</span>
+                <span>60</span>
               </div>
               <div class="session-progress-container">
                 <div class="session-progress-bar ${badgeClass}" style="width: ${pct}%;"></div>
               </div>
             </td>
+            <td><span class="session-status-badge ${badgeClass}">${escapeHtml(aviso)}</span></td>
           </tr>
         `;
       })
