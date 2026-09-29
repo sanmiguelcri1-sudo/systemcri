@@ -7,6 +7,8 @@ Separado por sucursal (San Miguel, Merlo, Ituzaingó).
 
 import calendar
 import datetime
+import json
+import os
 import re
 import time
 from collections import defaultdict
@@ -16,6 +18,11 @@ try:
     import pyodbc
 except Exception:
     pyodbc = None
+
+try:
+    from runtime_paths import external_path
+except Exception:
+    external_path = lambda *parts: os.path.join(os.path.dirname(__file__), *parts)
 
 from intersoftic_stats import (
     BRANCHES,
@@ -34,30 +41,45 @@ from intersoftic_stats import (
 # ──────────────────────────────────────────────────────────────
 # Feriados Argentina 2026 (nacionales inamovibles + trasladables)
 # ──────────────────────────────────────────────────────────────
-FERIADOS_ARGENTINA_2026 = {
-    "2026-01-01": "Año Nuevo",
-    "2026-02-16": "Carnaval",
-    "2026-02-17": "Carnaval",
-    "2026-03-24": "Día Nacional de la Memoria por la Verdad y la Justicia",
-    "2026-04-02": "Día del Veterano y de los Caídos en la Guerra de Malvinas",
-    "2026-04-03": "Viernes Santo",
-    "2026-05-01": "Día del Trabajador",
-    "2026-05-25": "Día de la Revolución de Mayo",
-    "2026-06-15": "Paso a la Inmortalidad del Gral. Güemes (trasladado)",
-    "2026-06-20": "Paso a la Inmortalidad del Gral. Manuel Belgrano",
-    "2026-07-09": "Día de la Independencia",
-    "2026-07-10": "Feriado Puente Turístico",
-    "2026-08-17": "Paso a la Inmortalidad del Gral. José de San Martín",
-    "2026-09-21": "Día de la Sanidad",
-    "2026-10-12": "Día del Respeto a la Diversidad Cultural",
-    "2026-11-23": "Día de la Soberanía Nacional",
-    "2026-11-27": "Feriado Puente Turístico",
-    "2026-12-07": "Feriado Puente Turístico",
-    "2026-12-08": "Inmaculada Concepción de María",
-    "2026-12-24": "Nochebuena",
-    "2026-12-25": "Navidad",
-    "2026-12-31": "Fin de Año",
-}
+FERIADOS_JSON_PATH = str(external_path("feriados.json"))
+
+def get_feriados():
+    if not os.path.exists(FERIADOS_JSON_PATH):
+        # Default
+        feriados = {
+            "2026-01-01": "Año Nuevo",
+            "2026-02-16": "Carnaval",
+            "2026-02-17": "Carnaval",
+            "2026-03-24": "Día Nacional de la Memoria por la Verdad y la Justicia",
+            "2026-04-02": "Día del Veterano y de los Caídos en la Guerra de Malvinas",
+            "2026-04-03": "Viernes Santo",
+            "2026-05-01": "Día del Trabajador",
+            "2026-05-25": "Día de la Revolución de Mayo",
+            "2026-06-15": "Paso a la Inmortalidad del Gral. Güemes (trasladado)",
+            "2026-06-20": "Paso a la Inmortalidad del Gral. Manuel Belgrano",
+            "2026-07-09": "Día de la Independencia",
+            "2026-07-10": "Feriado Puente Turístico",
+            "2026-08-17": "Paso a la Inmortalidad del Gral. José de San Martín",
+            "2026-09-21": "Día de la Sanidad",
+            "2026-10-12": "Día del Respeto a la Diversidad Cultural",
+            "2026-11-23": "Día de la Soberanía Nacional",
+            "2026-11-27": "Feriado Puente Turístico",
+            "2026-12-07": "Feriado Puente Turístico",
+            "2026-12-08": "Inmaculada Concepción de María",
+            "2026-12-24": "Nochebuena",
+            "2026-12-25": "Navidad",
+            "2026-12-31": "Fin de Año",
+        }
+        with open(FERIADOS_JSON_PATH, "w", encoding="utf-8") as f:
+            json.dump(feriados, f, ensure_ascii=False, indent=2)
+        return feriados
+    
+    with open(FERIADOS_JSON_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def save_feriados(feriados_dict):
+    with open(FERIADOS_JSON_PATH, "w", encoding="utf-8") as f:
+        json.dump(feriados_dict, f, ensure_ascii=False, indent=2)
 
 # Excepciones aceptadas por auditoria: casos que no se pueden corregir manualmente
 # en Intersoftic y no deben aparecer como error operativo.
@@ -120,9 +142,9 @@ def _is_weekend(date_str: str) -> Optional[str]:
     return None
 
 
-def _is_holiday(date_str: str) -> Optional[str]:
+def _is_holiday(date_str: str, feriados: dict) -> Optional[str]:
     """Devuelve el nombre del feriado si la fecha es un feriado, else None."""
-    return FERIADOS_ARGENTINA_2026.get(date_str)
+    return feriados.get(date_str)
 
 
 def _clean_digits(value: str) -> str:
@@ -191,7 +213,7 @@ def _friendly_sql_error(exc: Exception) -> str:
     return text
 
 
-def build_audit_for_branch(branch_cfg: dict) -> dict:
+def build_audit_for_branch(branch_cfg: dict, feriados: dict) -> dict:
     """
     Construye el reporte de auditoría para una sucursal.
     Retorna:
@@ -287,7 +309,7 @@ def build_audit_for_branch(branch_cfg: dict) -> dict:
 
                     # Check date errors
                     weekend = _is_weekend(fecha_str)
-                    holiday = _is_holiday(fecha_str)
+                    holiday = _is_holiday(fecha_str, feriados)
 
                     if weekend or holiday:
                         motivo = ""
@@ -416,9 +438,11 @@ def build_audit_all_branches() -> dict:
     results = []
     errors = []
 
+    feriados = get_feriados()
+
     for branch_cfg in BRANCHES:
         try:
-            result = build_audit_for_branch(branch_cfg)
+            result = build_audit_for_branch(branch_cfg, feriados)
             results.append(result)
         except Exception as exc:
             friendly = _friendly_sql_error(exc)
@@ -461,7 +485,7 @@ def build_audit_all_branches() -> dict:
 
     return {
         "year": int(TARGET_YEAR),
-        "feriados": FERIADOS_ARGENTINA_2026,
+        "feriados": feriados,
         "branches": results,
         "errors": errors,
         "summary": grand_summary,

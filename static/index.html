@@ -33,6 +33,10 @@
             <i class="fas fa-triangle-exclamation"></i>
             <span>Auditoría</span>
           </button>
+          <button class="nav-btn" data-tab="sessions-tab">
+            <i class="fas fa-user-clock"></i>
+            <span>Sesiones Anuales</span>
+          </button>
         </nav>
         <div class="sidebar-footer">
           <div class="network-status">
@@ -93,10 +97,16 @@
               <h1>Auditoría Intersoftic</h1>
               <p id="audit-meta">Sin actualizar</p>
             </div>
-            <button id="refresh-audit-btn" class="btn-primary">
-              <i class="fas fa-rotate-right"></i>
-              Actualizar
-            </button>
+            <div style="display:flex; gap:10px;">
+              <button id="manage-holidays-btn" class="btn-primary" style="background:#4b5563; border-color:transparent;">
+                <i class="fas fa-calendar-alt"></i>
+                Feriados
+              </button>
+              <button id="refresh-audit-btn" class="btn-primary">
+                <i class="fas fa-rotate-right"></i>
+                Actualizar
+              </button>
+            </div>
           </header>
 
           <div id="audit-branch-tabs" class="branch-tabs">
@@ -121,9 +131,92 @@
           <div id="audit-summary" class="panel-grid"></div>
           <div id="audit-container"></div>
         </section>
+
+        <section id="sessions-tab" class="tab-content">
+          <header class="tab-header sessions-header">
+            <div>
+              <h1>Control de Sesiones Anuales</h1>
+              <p id="sessions-meta">Sin actualizar</p>
+            </div>
+            <button id="refresh-sessions-btn" class="btn-primary">
+              <i class="fas fa-rotate-right"></i>
+              Actualizar
+            </button>
+          </header>
+
+          <div id="sessions-branch-tabs" class="branch-tabs">
+            <button class="branch-btn active" data-branch="all">Todas</button>
+            <button class="branch-btn" data-branch="san_miguel">San Miguel</button>
+            <button class="branch-btn" data-branch="ituzaingo">Ituzaingó</button>
+            <button class="branch-btn" data-branch="merlo">Merlo</button>
+          </div>
+
+          <div class="audit-search-row">
+            <div class="search-bar">
+              <i class="fas fa-search"></i>
+              <input
+                id="sessions-search"
+                type="text"
+                placeholder="Buscar paciente o afiliado..."
+                autocomplete="off"
+              />
+            </div>
+          </div>
+
+          <div id="sessions-summary" class="panel-grid"></div>
+          
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Paciente</th>
+                  <th>Afiliado</th>
+                  <th>Sucursal</th>
+                  <th>MDCS</th>
+                  <th>HD</th>
+                  <th>Total</th>
+                  <th style="min-width:140px;">Límite (50)</th>
+                </tr>
+              </thead>
+              <tbody id="sessions-body"></tbody>
+            </table>
+          </div>
+        </section>
       </main>
     </div>
 
-    <script src="app.js?v=20260608-audit-state-colors"></script>
+    <!-- Holidays Modal -->
+    <div id="holidays-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Gestión de Feriados</h2>
+          <button id="close-holidays-btn" class="icon-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="holidays-add-row">
+            <input type="date" id="new-holiday-date" />
+            <input type="text" id="new-holiday-name" placeholder="Nombre del feriado..." />
+            <button id="add-holiday-btn" class="btn-primary" style="min-height:38px; padding:8px 12px;"><i class="fas fa-plus"></i></button>
+          </div>
+          <div class="holidays-list-container">
+            <table class="audit-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Nombre</th>
+                  <th style="width:50px; text-align:center;">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="holidays-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="save-holidays-btn" class="btn-primary"><i class="fas fa-save"></i> Guardar Cambios</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="app.js?v=20260903-sessions-load"></script>
   </body>
 </html>

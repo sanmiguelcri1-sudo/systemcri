@@ -16,7 +16,14 @@ hiddenimports = (
     + collect_submodules("fastapi")
     + collect_submodules("pydantic")
     + collect_submodules("webview")
-    + ["pyodbc", "pymssql"]
+    + [
+        "pyodbc",
+        "pymssql",
+        "intersoftic_sessions",
+        "intersoftic_audit",
+        "intersoftic_stats",
+        "server",
+    ]
 )
 
 a = Analysis(
